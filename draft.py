@@ -3,57 +3,50 @@ from utils.datasets import *
 import numpy as np
 import matplotlib.pyplot as plt
 
-# a = tf.pad(
-#     np.array([1, 2, 3, 4]),
-#     [[0, 5]],
-#     'CONSTANT',
-#     constant_values=0
+get_model((133, 1925, 1), len(CHARACTERS)).summary()
+
+# # USE TF.DATA
+# train_dataset = get_tf_dataset(
+#     img_dir='data/data_samples_2',
+#     label_path='data/data_samples_2/labels.json',
+#     target_size=(133, 1925),
+#     label_length=125,
+#     batch_size=4,
+#     grayscale=True,
+#     normalize=True
 # )
-# print(a)
+# for imgs, labels in train_dataset.take(1):
+#     pass
 
-# USE TF.DATA
-train_dataset = get_tf_dataset(
-    img_dir='data/data_samples_2',
-    target_size=(69, 773),
-    label_length=125,
-    batch_size=4,
-    grayscale=True,
-    normalize=True
-)
-
-plt.figure(figsize=(40, 12))
-i = 0
-for imgs, labels in train_dataset.take(1):
-    print(imgs.shape)
-    print(labels.shape)
-
-    for img, label in zip(imgs, labels):
-        plt.subplot(4, 1, i + 1)
-        plt.figure(figsize=(40, 3))
-        label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')
-        plt.imshow(img)
-        plt.title(label)
-        plt.axis('off')
-        plt.tight_layout()
-        i += 1
-plt.show()
 
 
 # # USE KERAS SEQUENCE
 # dataset = AddressDataset(
 #     img_dir='data/data_samples_2',
+#     label_path='data/data_samples_2/labels.json',
 #     target_size=(133, 1925),
+#     label_length=125,
 #     batch_size=4,
 #     grayscale=True,
 #     normalize=True
 # )
-#
-# imgs = next(iter(dataset))
+# imgs, labels = next(iter(dataset))
+
+
 # print(imgs.shape)
-# plt.figure(figsize=(40, 3))
-# plt.imshow(imgs[0])
-# plt.axis('off')
-# plt.tight_layout()
+# print(labels.shape)
+#
+# plt.figure(figsize=(20, 6))
+# i = 0
+# for img, label in zip(imgs, labels):
+#     plt.subplot(4, 1, i + 1)
+#     label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')
+#     plt.imshow(np.squeeze(img))
+#     plt.title(label)
+#     plt.axis('off')
+#     plt.tight_layout()
+#     i += 1
+# plt.savefig('draft.jpg')
 # plt.show()
 
 

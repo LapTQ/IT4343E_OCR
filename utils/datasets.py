@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
 from pathlib import Path
 import json
 import os
@@ -9,12 +8,12 @@ import os
 CHARACTERS = [x for x in " #'()+,-./:0123456789ABCDEFGHIJKLMNOPQRSTUVWXYabcdeghiklmnopqrstuvxyzÂÊÔàáâãèéêìíòóôõùúýăĐđĩũƠơưạảấầẩậắằẵặẻẽếềểễệỉịọỏốồổỗộớờởỡợụủỨứừửữựỳỵỷỹ"]
 
 # for out-of-vocab token, use '' and the corresponding 0.
-CHAR_TO_NUM = layers.StringLookup(
+CHAR_TO_NUM = keras.layers.StringLookup(
     vocabulary=CHARACTERS,
     oov_token=""
 )
 
-NUM_TO_CHAR = layers.StringLookup(
+NUM_TO_CHAR = keras.layers.StringLookup(
     vocabulary=CHAR_TO_NUM.get_vocabulary(),
     oov_token="",
     invert=True
@@ -196,15 +195,16 @@ def get_tf_dataset(
         cache=False
 ):
 
-    dataset = tf.data.Dataset.from_tensor_slices(
-        [str(path) for path in Path(img_dir).glob('*.png')]
-    )
     # load annotation file: {img_name: label}
-    labels = json.load(open(label_path, 'r'))
+    dataset = json.load(open(label_path, 'r'))
+    dataset = {os.path.join(img_dir, img_name): label for img_name, label in dataset.items()}
+
+    dataset = tf.data.Dataset.from_tensor_slices(
+        (dataset.keys(), dataset.values())
+    )
+
     # dataset = [(img_array, label_string),...]
-    dataset = dataset.map(
-        lambda img_path: (load_img(img_path), labels[img_path.split(os.path.sep)[-1]]),
-        num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.map(lambda x, y: (load_img(x), y), num_parallel_calls=tf.data.AUTOTUNE)
     # dataset = [(img_array, label_numbers),...]
     dataset = dataset.map(
         lambda x, y: (
@@ -230,7 +230,6 @@ def get_tf_dataset(
         dataset = dataset.cache()
     if shuffle:
         dataset = dataset.shuffle(500)
-    # dataset = dataset.map(lambda x: (x, x))
     if batch_size is not None:
         dataset = dataset.batch(batch_size)
 
