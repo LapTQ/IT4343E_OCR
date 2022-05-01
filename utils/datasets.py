@@ -102,6 +102,7 @@ def process_label(label, padded_shapes=None, padding_values=0):
     label = tf.strings.unicode_split(label, input_encoding='UTF-8')
     label = CHAR_TO_NUM(label)
     if padded_shapes is not None:
+        # pad label with padding_values to a unified length (padded_shapes)
         label = tf.pad(
             label,
             [[0, padded_shapes - len(label)]],
@@ -206,9 +207,9 @@ def get_tf_dataset(
         num_parallel_calls=tf.data.AUTOTUNE)
     # dataset = [(img_array, label_numbers),...]
     dataset = dataset.map(
-        lambda img, label: (
+        lambda x, y: (
             process_img(
-                img,
+                x,
                 grayscale=grayscale,
                 invert_color=invert_color,
                 dilate=dilate,
@@ -218,7 +219,7 @@ def get_tf_dataset(
                 threshold=threshold
             ),
             process_label(
-                label,
+                y,
                 padded_shapes=label_length,
                 padding_values=0)
         ),
