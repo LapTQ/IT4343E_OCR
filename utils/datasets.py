@@ -1,7 +1,24 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.keras import layers
 from pathlib import Path
+import json
+import os
+
+CHARACTERS = [x for x in " #'()+,-./:0123456789ABCDEFGHIJKLMNOPQRSTUVWXYabcdeghiklmnopqrstuvxyzÂÊÔàáâãèéêìíòóôõùúýăĐđĩũƠơưạảấầẩậắằẵặẻẽếềểễệỉịọỏốồổỗộớờởỡợụủỨứừửữựỳỵỷỹ"]
+
+# for out-of-vocab token, use '' and the corresponding 0.
+CHAR_TO_NUM = layers.StringLookup(
+    vocabulary=CHARACTERS,
+    oov_token=""
+)
+
+NUM_TO_CHAR = layers.StringLookup(
+    vocabulary=CHAR_TO_NUM.get_vocabulary(),
+    oov_token="",
+    invert=True
+)
 
 def load_img(path):
     img_string = tf.io.read_file(path)
@@ -76,6 +93,24 @@ def process_img(
 
     return img
 
+def process_label(label, padded_shapes=None, padding_values=0):
+    """
+
+    :param label: string of transcript
+    :return:
+    """
+    label = tf.strings.unicode_split(label, input_encoding='UTF-8')
+    label = CHAR_TO_NUM(label)
+    if padded_shapes is not None:
+        label = tf.pad(
+            label,
+            [[0, padded_shapes - len(label)]],
+            'CONSTANT',
+            constant_values=padding_values
+        )
+
+    return label
+
 class AddressDataset(keras.utils.Sequence):
     """Iterate over the data as Numpy array.
     Reference: https://keras.io/examples/vision/oxford_pets_image_segmentation/
@@ -84,7 +119,9 @@ class AddressDataset(keras.utils.Sequence):
     def __init__(
             self,
             img_dir,
+            label_path,
             target_size,
+            label_length,
             batch_size=None,
             grayscale=False,
             invert_color=False,
@@ -94,7 +131,9 @@ class AddressDataset(keras.utils.Sequence):
             threshold=0.5
     ):
         self.img_paths = [str(path) for path in Path(img_dir).glob('*.png')]
+        self.labels = json.load(open(label_path, 'r'))
         self.target_size = target_size
+        self.label_length = label_length
         self.batch_size = batch_size
         self.invert_color = invert_color
         self.dilate = dilate
@@ -112,9 +151,10 @@ class AddressDataset(keras.utils.Sequence):
         i = img_num * idx
         x = np.empty(shape=(img_num,) + self.target_size + ((3,) if not self.grayscale else (1,)),
                      dtype=np.uint8 if not self.normalize else np.float32)
-
+        y = np.zeros(shape=(img_num, self.label_length), dtype=np.int32)
         for j, path in enumerate(self.img_paths[i: i + img_num]):
             img = load_img(path)
+            label = self.labels[path.split(os.path.sep)[-1]]
             img = process_img(
                 img,
                 grayscale=self.grayscale,
@@ -125,16 +165,25 @@ class AddressDataset(keras.utils.Sequence):
                 binarize=self.binarize,
                 threshold=self.threshold
             )
+            label = process_label(
+                label,
+                padded_shapes=self.label_length,
+                padding_values=0
+            )
             x[j] = img
+            y[j] = label
 
         if self.batch_size is None:
-            x = np.squeeze(x,  axis=0)
+            x = np.squeeze(x, axis=0)
+            y = np.squeeze(y, axis=0)
 
-        return x#, x
+        return x, y
 
 def get_tf_dataset(
         img_dir,
+        label_path,
         target_size,
+        label_length,
         batch_size=None,
         grayscale=False,
         invert_color=False,
@@ -149,17 +198,29 @@ def get_tf_dataset(
     dataset = tf.data.Dataset.from_tensor_slices(
         [str(path) for path in Path(img_dir).glob('*.png')]
     )
-    dataset = dataset.map(load_img, num_parallel_calls=tf.data.AUTOTUNE)
+    # load annotation file: {img_name: label}
+    labels = json.load(open(label_path, 'r'))
+    # dataset = [(img_array, label_string),...]
     dataset = dataset.map(
-        lambda x: process_img(
-            x,
-            grayscale=grayscale,
-            invert_color=invert_color,
-            dilate=dilate,
-            target_size=target_size,
-            normalize=normalize,
-            binarize=binarize,
-            threshold=threshold
+        lambda img_path: (load_img(img_path), labels[img_path.split(os.path.sep)[-1]]),
+        num_parallel_calls=tf.data.AUTOTUNE)
+    # dataset = [(img_array, label_numbers),...]
+    dataset = dataset.map(
+        lambda img, label: (
+            process_img(
+                img,
+                grayscale=grayscale,
+                invert_color=invert_color,
+                dilate=dilate,
+                target_size=target_size,
+                normalize=normalize,
+                binarize=binarize,
+                threshold=threshold
+            ),
+            process_label(
+                label,
+                padded_shapes=label_length,
+                padding_values=0)
         ),
         num_parallel_calls=tf.data.AUTOTUNE
     )

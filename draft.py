@@ -1,5 +1,5 @@
 from models.crnn import *
-from utils.datasets import *
+# from utils.datasets import *
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -18,8 +18,15 @@ import matplotlib.pyplot as plt
 # for v in i_layer.variables:
 #     print(v)
 
+a = tf.pad(
+    np.array([1, 2, 3, 4]),
+    [[0, 5]],
+    'CONSTANT',
+    constant_values=0
+)
+print(a)
 
-# # USE TF.DATA
+# USE TF.DATA
 # train_dataset = get_tf_dataset(
 #     img_dir='data/data_samples_2',
 #     target_size=(69, 773),
@@ -31,33 +38,36 @@ import matplotlib.pyplot as plt
 # )
 #
 # plt.figure(figsize=(40, 3))
-# for imgs in train_dataset.take(1):
+# for imgs, labels in train_dataset.take(1):
 #     print(imgs.shape)
+#     print(labels.shape)
 #
-#     for img in imgs:
+#     for img, label in zip(imgs, labels):
+#         label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy()
 #         plt.imshow(img)
+#         plt.title(label)
 #         plt.axis('off')
 #         plt.tight_layout()
 #         plt.show()
 #         break
 
 
-# USE KERAS SEQUENCE
-dataset = AddressDataset(
-    img_dir='data/data_samples_2',
-    target_size=(133, 1925),
-    batch_size=4,
-    grayscale=True,
-    normalize=True
-)
-
-imgs = next(iter(dataset))
-print(imgs.shape)
-plt.figure(figsize=(40, 3))
-plt.imshow(imgs[0])
-plt.axis('off')
-plt.tight_layout()
-plt.show()
+# # USE KERAS SEQUENCE
+# dataset = AddressDataset(
+#     img_dir='data/data_samples_2',
+#     target_size=(133, 1925),
+#     batch_size=4,
+#     grayscale=True,
+#     normalize=True
+# )
+#
+# imgs = next(iter(dataset))
+# print(imgs.shape)
+# plt.figure(figsize=(40, 3))
+# plt.imshow(imgs[0])
+# plt.axis('off')
+# plt.tight_layout()
+# plt.show()
 
 
 
