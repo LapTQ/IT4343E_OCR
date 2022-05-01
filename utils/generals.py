@@ -1,5 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
+import numpy as np
+from .datasets import *
 
 def decode_batch_predictions(pred):
     input_len = np.ones(pred.shape[0]) * pred.shape[1]
@@ -8,6 +10,6 @@ def decode_batch_predictions(pred):
     # Iterate over the results and get back the text
     output_text = []
     for result in results:
-        result = tf.strings.reduce_join(num_to_char(result)).numpy().decode("utf-8")
+        result = tf.strings.reduce_join(NUM_TO_CHAR(result)).numpy().decode("utf-8")
         output_text.append(result)
     return output_text

@@ -2,7 +2,8 @@ import tensorflow as tf
 from tensorflow import keras
 
 def get_model(image_shape, vocab_size):
-    input = keras.layers.Input(image_shape)
+    # must be None???
+    input = keras.layers.Input((image_shape[0], None, image_shape[2]))
     x = keras.layers.Conv2D(
         filters=32,
         kernel_size=(11, 41),
@@ -21,6 +22,7 @@ def get_model(image_shape, vocab_size):
     )(x)
     x = keras.layers.BatchNormalization()(x)
     x = keras.layers.ReLU()(x)
+    x = keras.layers.Permute((2, 1, 3))(x)
     # reshape to feed to RNNs
     x = keras.layers.Reshape((-1, x.shape[-2] * x.shape[-1]))(x)
     rnn_layers = 5
@@ -32,7 +34,8 @@ def get_model(image_shape, vocab_size):
                 recurrent_activation='sigmoid',
                 use_bias=True,
                 return_sequences=True,
-                reset_after=True
+                reset_after=True,
+                name=f"gru_{i}",
             ),
             merge_mode='concat'
         )(x)

@@ -1,8 +1,8 @@
 import tensorflow as tf
 from tensorflow import keras
 from jiwer import wer
-from generals import decode_batch_predictions
-from datasets import *
+from .generals import decode_batch_predictions
+from .datasets import *
 import numpy as np
 
 class CallbackEval(keras.callbacks.Callback):

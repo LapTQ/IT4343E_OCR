@@ -15,12 +15,13 @@ def run(
         batch_size,
         train_data,
         val_data,
+        lr,
         reduce_lr_patience,
         early_stop_patience,
         target_height,
         target_width,
         label_length,
-        gray_scale,
+        grayscale,
         invert_color,
         dilate,
         normalize,
@@ -29,13 +30,13 @@ def run(
         shuffle,
         cache,
 ):
-    image_shape = (target_height, target_width) + (3 if not gray_scale else 1,)
+    image_shape = (target_height, target_width) + (3 if not grayscale else 1,)
 
     if pretrained is not None:
         model = keras.models.load_model(pretrained)
         print(f'Load pretrained model: {pretrained}')
     else:
-        model = get_model(image_shape=image_shape, vocab_size=len(CHARACTERS))
+        model = get_model(image_shape=image_shape, vocab_size=CHAR_TO_NUM.vocabulary_size())
         print("Load new model")
     print(model.summary())
 
@@ -45,7 +46,7 @@ def run(
         target_size=(target_height, target_width),
         label_length=label_length,
         batch_size=batch_size,
-        grayscale=gray_scale,
+        grayscale=grayscale,
         invert_color=invert_color,
         dilate=dilate,
         normalize=normalize,
@@ -60,7 +61,7 @@ def run(
         target_size=(target_height, target_width),
         label_length=label_length,
         batch_size=batch_size,
-        grayscale=gray_scale,
+        grayscale=grayscale,
         invert_color=invert_color,
         dilate=dilate,
         normalize=normalize,
@@ -72,7 +73,7 @@ def run(
 
     model.compile(
         optimizer=keras.optimizers.SGD(
-            learning_rate=0.01,
+            learning_rate=lr,
             momentum=0.9,
             nesterov=True
         ),
@@ -112,6 +113,7 @@ if __name__ == '__main__':
     ap.add_argument('--batch-size', default=32, type=int)
     ap.add_argument('--train-data', default='data/data_samples_2', type=str)
     ap.add_argument('--val-data', default='data/private_test', type=str)
+    ap.add_argument('--lr', default=1e-4, type=float)
     ap.add_argument('--reduce-lr-patience', default=4, type=int)
     ap.add_argument('--early-stop-patience', default=10, type=int)
     ap.add_argument('--target-height', default=124, type=int)  # 69 133
