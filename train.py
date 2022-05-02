@@ -116,9 +116,9 @@ if __name__ == '__main__':
     ap.add_argument('--lr', default=1e-5, type=float)
     ap.add_argument('--reduce-lr-patience', default=4, type=int)
     ap.add_argument('--early-stop-patience', default=10, type=int)
-    ap.add_argument('--target-height', default=124, type=int)  # 69 133
-    ap.add_argument('--target-width', default=1900, type=int)  # 773 1925
-    ap.add_argument('--label-length', default=125, type=int)
+    ap.add_argument('--target-height', default=124, type=int)
+    ap.add_argument('--target-width', default=1900, type=int)
+    ap.add_argument('--label-length', default=80, type=int)
     ap.add_argument('--grayscale', default=True, type=bool)
     ap.add_argument('--invert-color', default=False, type=bool)
     ap.add_argument('--dilate', default=0, type=int)

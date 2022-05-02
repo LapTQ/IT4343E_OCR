@@ -5,23 +5,24 @@ from utils.datasets import *
 import numpy as np
 from utils.generals import *
 import matplotlib.pyplot as plt
+import json
 
-get_model((133, 1925, 1), len(CHARACTERS)).summary()
+get_model2((124, 1900, 1), len(CHARACTERS)).summary()
 
 # USE TF.DATA
-# train_dataset = get_tf_dataset(
-#     img_dir='data/data_samples_2',
-#     label_path='data/data_samples_2/labels.json',
-#     target_size=(133, 1925),
-#     label_length=125,
-#     batch_size=4,
-#     grayscale=True,
-#     invert_color=True,
-#     dilate=2,
-#     normalize=True
-# )
-# for imgs, labels in train_dataset.take(1):
-#     pass
+train_dataset = get_tf_dataset(
+    img_dir='data/data_samples_2',
+    label_path='data/data_samples_2/labels.json',
+    target_size=(124, 1900),
+    label_length=80,
+    batch_size=4,
+    grayscale=True,
+    invert_color=True,
+    # dilate=2,
+    normalize=True
+)
+for imgs, labels in train_dataset.take(1):
+    pass
 
 
 
@@ -38,21 +39,21 @@ get_model((133, 1925, 1), len(CHARACTERS)).summary()
 # imgs, labels = next(iter(dataset))
 
 
-# print(imgs.shape)
-# print(labels.shape)
-#
-# plt.figure(figsize=(20, 6))
-# i = 0
-# for img, label in zip(imgs, labels):
-#     plt.subplot(4, 1, i + 1)
-#     label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')
-#     plt.imshow(np.squeeze(img))
-#     plt.title(label)
-#     plt.axis('off')
-#     plt.tight_layout()
-#     i += 1
-# plt.savefig('draft.jpg')
-# plt.show()
+print(imgs.shape)
+print(labels.shape)
+
+plt.figure(figsize=(20, 8))
+i = 0
+for img, label in zip(imgs, labels):
+    plt.subplot(4, 1, i + 1)
+    label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')
+    plt.imshow(np.squeeze(img))
+    plt.title(label)
+    # plt.axis('off')
+    plt.tight_layout()
+    i += 1
+plt.savefig('draft.jpg')
+plt.show()
 
 chars = ['a', 'b', 'c']
 ctn = keras.layers.StringLookup(vocabulary=chars, oov_token='')
@@ -97,26 +98,28 @@ def process_label(label, target_length=None, padding_values=0):
         )
 
     return label
+#
+# pred = np.array([
+#     [[0.1, 0.5, 0.3, 0.1],
+#      [0.2, 0.5, 0.2, 0.2],
+#      [0.1, 0.1, 0.1, 0.7],
+#      [0.1, 0.2, 0.5, 0.2],
+#      [0.1, 0.2, 0.5, 0.2],
+#      [0.1, 0.5, 0.3, 0.1],
+#      [0.2, 0.5, 0.2, 0.2],
+#      [0.1, 0.1, 0.1, 0.7],
+#      [0.2, 0.5, 0.2, 0.2]
+#      ]
+# ])
+# label = 'abaa'
+# label = process_label(label)
+# label = np.expand_dims(label, axis=0)
+# label = np.array([[1, 2, 1, 1, 0, 0, 0, 0]])
+# print(label)
+#
+# a = decode_batch_predictions(pred)
+# loss = CTCLoss(label, pred)
+# print(a)
+# print(loss)
 
-pred = np.array([
-    [[0.1, 0.5, 0.3, 0.1],
-     [0.2, 0.5, 0.2, 0.2],
-     [0.1, 0.1, 0.1, 0.7],
-     [0.1, 0.2, 0.5, 0.2],
-     [0.1, 0.2, 0.5, 0.2],
-     [0.1, 0.5, 0.3, 0.1],
-     [0.2, 0.5, 0.2, 0.2],
-     [0.1, 0.1, 0.1, 0.7],
-     [0.2, 0.5, 0.2, 0.2]
-     ]
-])
-label = 'abaa'
-label = process_label(label)
-label = np.expand_dims(label, axis=0)
-label = np.array([[1, 2, 1, 1, 0, 0, 0, 0]])
-print(label)
 
-a = decode_batch_predictions(pred)
-loss = CTCLoss(label, pred)
-print(a)
-print(loss)
