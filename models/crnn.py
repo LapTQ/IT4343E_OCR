@@ -9,7 +9,7 @@ def get_model(image_shape, vocab_size):
         kernel_size=(11, 41),
         strides=(2, 2),
         padding='same',
-        use_bias=False
+        # use_bias=False
     )(input)
     x = keras.layers.BatchNormalization()(x)
     x = keras.layers.ReLU()(x)
@@ -18,7 +18,7 @@ def get_model(image_shape, vocab_size):
         kernel_size=(11, 21),
         strides=(1, 2),
         padding='same',
-        use_bias=False
+        # use_bias=False
     )(x)
     x = keras.layers.BatchNormalization()(x)
     x = keras.layers.ReLU()(x)
@@ -26,10 +26,11 @@ def get_model(image_shape, vocab_size):
     # reshape to feed to RNNs
     x = keras.layers.Reshape((-1, x.shape[-2] * x.shape[-1]))(x)
     rnn_layers = 5
+    rnn_units = 256
     for i in range(1, rnn_layers + 1):
         x = keras.layers.Bidirectional(
             keras.layers.GRU(
-                units=128,
+                units=rnn_units,
                 activation='tanh',
                 recurrent_activation='sigmoid',
                 use_bias=True,
@@ -37,13 +38,14 @@ def get_model(image_shape, vocab_size):
                 reset_after=True,
                 name=f"gru_{i}",
             ),
+            name=f"bidirectional_{i}",
             merge_mode='concat'
         )(x)
         if i < rnn_layers:
-            x = keras.layers.Dropout(rate=0.5)(x)
-    x = keras.layers.Dense(256)(x)
+            x = keras.layers.Dropout(rate=0.2)(x)
+    x = keras.layers.Dense(2 * rnn_units)(x)
     x = keras.layers.ReLU()(x)
-    x = keras.layers.Dropout(rate=0.5)(x)
+    x = keras.layers.Dropout(rate=0.2)(x)
     # why +1?
     output = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
 
