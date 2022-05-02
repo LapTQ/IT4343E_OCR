@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 import os
 
-CHARACTERS = [x for x in " #'()+,-./:0123456789ABCDEFGHIJKLMNOPQRSTUVWXYabcdeghiklmnopqrstuvxyzÂÊÔàáâãèéêìíòóôõùúýăĐđĩũƠơưạảấầẩậắằẵặẻẽếềểễệỉịọỏốồổỗộớờởỡợụủỨứừửữựỳỵỷỹ"]
+CHARACTERS = [x for x in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYabcdeghiklmnopqrstuvxyzÂÊÔàáâãèéêìíòóôõùúýăĐđĩũƠơưạảấầẩậắằẵặẻẽếềểễệỉịọỏốồổỗộớờởỡợụủỨứừửữựỳỵỷỹ#'()+,-./: "]
 
 # for out-of-vocab token, use '' and the corresponding 0.
 CHAR_TO_NUM = keras.layers.StringLookup(
@@ -92,7 +92,7 @@ def process_img(
 
     return img
 
-def process_label(label, padded_shapes=None, padding_values=0):
+def process_label(label, target_length=None, padding_values=0):
     """
 
     :param label: string of transcript
@@ -100,11 +100,11 @@ def process_label(label, padded_shapes=None, padding_values=0):
     """
     label = tf.strings.unicode_split(label, input_encoding='UTF-8')
     label = CHAR_TO_NUM(label)
-    if padded_shapes is not None:
+    if target_length is not None:
         # pad label with padding_values to a unified length (padded_shapes)
         label = tf.pad(
             label,
-            [[0, padded_shapes - len(label)]],
+            [[0, target_length - len(label)]],
             'CONSTANT',
             constant_values=padding_values
         )
@@ -167,7 +167,7 @@ class AddressDataset(keras.utils.Sequence):
             )
             label = process_label(
                 label,
-                padded_shapes=self.label_length,
+                target_length=self.label_length,
                 padding_values=0
             )
             x[j] = img
@@ -220,7 +220,7 @@ def get_tf_dataset(
             ),
             process_label(
                 y,
-                padded_shapes=label_length,
+                target_length=label_length,
                 padding_values=0)
         ),
         num_parallel_calls=tf.data.AUTOTUNE

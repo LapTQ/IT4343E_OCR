@@ -113,7 +113,7 @@ if __name__ == '__main__':
     ap.add_argument('--batch-size', default=32, type=int)
     ap.add_argument('--train-data', default='data/data_samples_2', type=str)
     ap.add_argument('--val-data', default='data/private_test', type=str)
-    ap.add_argument('--lr', default=1e-4, type=float)
+    ap.add_argument('--lr', default=1e-5, type=float)
     ap.add_argument('--reduce-lr-patience', default=4, type=int)
     ap.add_argument('--early-stop-patience', default=10, type=int)
     ap.add_argument('--target-height', default=124, type=int)  # 69 133
