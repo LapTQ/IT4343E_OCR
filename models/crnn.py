@@ -17,7 +17,7 @@ def get_model(image_shape, vocab_size):
     x = keras.layers.Conv2D(
         filters=32,
         kernel_size=(11, 21),
-        strides=(1, 2),
+        strides=(1, 1),#(1, 2),
         padding='same',
         kernel_initializer='he_normal'
         # use_bias=False
@@ -27,7 +27,7 @@ def get_model(image_shape, vocab_size):
     x = keras.layers.Permute((2, 1, 3))(x)
     # reshape to feed to RNNs
     x = keras.layers.Reshape((-1, x.shape[-2] * x.shape[-1]))(x)
-    rnn_layers = 5
+    rnn_layers = 4
     rnn_units = 128
     for i in range(1, rnn_layers + 1):
         x = keras.layers.Bidirectional(
