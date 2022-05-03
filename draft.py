@@ -45,6 +45,7 @@ print(labels.shape)
 plt.figure(figsize=(20, 8))
 i = 0
 for img, label in zip(imgs, labels):
+    print(label)
     plt.subplot(4, 1, i + 1)
     label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')
     plt.imshow(np.squeeze(img))

@@ -77,13 +77,12 @@ def run(
             momentum=0.9,
             nesterov=True
         ),
-        loss=CTCLoss
+        # loss=CTCLoss
     )
 
     callbacks = [
         keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=reduce_lr_patience, verbose=1),
-        keras.callbacks.EarlyStopping(monitor='val_loss', patience=early_stop_patience, verbose=1,
-                                      restore_best_weights=True),
+        keras.callbacks.EarlyStopping(monitor='val_loss', patience=early_stop_patience, verbose=1, restore_best_weights=True),
         keras.callbacks.ModelCheckpoint(filepath='saved_models/htr', save_best_only=True),
         CallbackEval(val_dataset)
     ]

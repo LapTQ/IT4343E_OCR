@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
+from utils.losses import *
 
 def get_model(image_shape, vocab_size):
     # must be None???
@@ -49,28 +50,37 @@ def get_model(image_shape, vocab_size):
     x = keras.layers.LeakyReLU()(x)
     x = keras.layers.Dropout(rate=0.2)(x)
     # +1 for the blank token: oov, 'a', 'b',..., blank
-    output = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
+    x = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
+    labels = keras.layers.Input(shape=(None,))
+    output = CTCLayer()(labels, x)
 
-    return keras.Model(input, output)
+    model = keras.Model(inputs=[input, labels], outputs=output)
+
+    return model
 
 def get_model2(image_shape, vocab_size):
     # must be None???
     input = keras.layers.Input((image_shape[0], None, image_shape[2]))
 
-    x = keras.layers.Conv2D(filters=16, kernel_size=(4, 14), strides=2, padding='same', activation='relu', kernel_initializer='he_normal')(input)
+    x = keras.layers.Conv2D(filters=16, kernel_size=(4, 14), strides=2, padding='same', kernel_initializer='he_normal')(input)
     x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.LeakyReLU()(x)
 
-    x = keras.layers.Conv2D(filters=32, kernel_size=(5, 14), padding='same', activation='relu', kernel_initializer='he_normal')(x)
+    x = keras.layers.Conv2D(filters=32, kernel_size=(5, 14), padding='same', kernel_initializer='he_normal')(x)
     x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.LeakyReLU()(x)
 
-    x = keras.layers.Conv2D(filters=64, kernel_size=(5, 14), strides=2, padding='same', activation='relu', kernel_initializer='he_normal')(x)
+    x = keras.layers.Conv2D(filters=64, kernel_size=(5, 14), strides=2, padding='same', kernel_initializer='he_normal')(x)
     x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.LeakyReLU()(x)
 
-    x = keras.layers.Conv2D(filters=128, kernel_size=(5, 14), padding='same', activation='relu', kernel_initializer='he_normal')(x)
+    x = keras.layers.Conv2D(filters=128, kernel_size=(5, 14), padding='same', kernel_initializer='he_normal')(x)
     x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.LeakyReLU()(x)
 
-    x = keras.layers.Conv2D(filters=256, kernel_size=(5, 14), strides=2, padding='same', activation='relu', kernel_initializer='he_normal')(x)
+    x = keras.layers.Conv2D(filters=256, kernel_size=(5, 14), strides=2, padding='same', kernel_initializer='he_normal')(x)
     x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.LeakyReLU()(x)
 
     x = keras.layers.Permute((2, 1, 3))(x)
     # reshape to feed to RNNs
@@ -97,7 +107,14 @@ def get_model2(image_shape, vocab_size):
     x = keras.layers.LeakyReLU()(x)
     x = keras.layers.Dropout(rate=0.2)(x)
     # +1 for the blank token: oov, 'a', 'b',..., blank
-    output = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
+    # +2 is to account for the two special tokens introduced by the CTC loss.
+    # The recommendation comes here: https://git.io/J0eXP.
+    x = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
 
-    return keras.Model(input, output)
+    labels = keras.layers.Input(shape=(None,))
+    output = CTCLayer()(labels, x)
+
+    model = keras.Model(inputs=[input, labels], outputs=output)
+
+    return model
 
