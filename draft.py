@@ -43,22 +43,23 @@ for images, labels in train_dataset.take(1):
 print(images.shape)
 print(labels.shape)
 
-plt.figure(figsize=(20, 8))
-i = 0
-for img, label in zip(images, labels):
-    # print(label)
-    plt.subplot(4, 1, i + 1)
-    label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')
-    plt.imshow(np.squeeze(img))
-    plt.title(label)
-    # plt.axis('off')
-    plt.tight_layout()
-    i += 1
-plt.savefig('draft.jpg')
-plt.show()
+# plt.figure(figsize=(20, 8))
+# i = 0
+# for img, label in zip(images, labels):
+#     # print(label)
+#     plt.subplot(4, 1, i + 1)
+#     label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')
+#     plt.imshow(np.squeeze(img))
+#     plt.title(label)
+#     # plt.axis('off')
+#     plt.tight_layout()
+#     i += 1
+# plt.savefig('draft.jpg')
+# plt.show()
 
 targets = []
 preds = model.predict(images)
+print(CTCLoss(labels, preds))
 print(preds.shape)
 preds = decode_batch_predictions(preds)
 for label in labels:

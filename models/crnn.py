@@ -31,8 +31,7 @@ def get_model(image_shape, vocab_size, option=2):
         x = keras.layers.LeakyReLU(name='leaky_relu_2')(x)
 
     elif option == 2:
-        x = keras.layers.Conv2D(filters=16, kernel_size=(4, 14), strides=2, padding='same',
-                                kernel_initializer='he_normal')(input)
+        x = keras.layers.Conv2D(filters=16, kernel_size=(4, 14), strides=2, padding='same', kernel_initializer='he_normal')(input)
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.LeakyReLU()(x)
 
@@ -40,8 +39,7 @@ def get_model(image_shape, vocab_size, option=2):
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.LeakyReLU()(x)
 
-        x = keras.layers.Conv2D(filters=64, kernel_size=(14, 5), strides=2, padding='same',
-                                kernel_initializer='he_normal')(x)
+        x = keras.layers.Conv2D(filters=64, kernel_size=(14, 5), strides=2, padding='same', kernel_initializer='he_normal')(x)
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.LeakyReLU()(x)
 
@@ -49,8 +47,7 @@ def get_model(image_shape, vocab_size, option=2):
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.LeakyReLU()(x)
 
-        x = keras.layers.Conv2D(filters=256, kernel_size=(14, 5), strides=2, padding='same',
-                                kernel_initializer='he_normal')(x)
+        x = keras.layers.Conv2D(filters=256, kernel_size=(14, 5), padding='same', kernel_initializer='he_normal')(x)
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.LeakyReLU()(x)
 
