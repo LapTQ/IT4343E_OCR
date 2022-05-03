@@ -13,10 +13,11 @@ class CallbackEval(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         predictions = []
         targets = []
-        for images, labels in self.dataset:
-            preds = self.model.predict(images)
+        for batch in self.dataset:
+            preds = self.model.predict(batch)
             preds = decode_batch_predictions(preds)
             predictions.extend(preds)
+            labels = batch['label']
             for label in labels:
                 label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')
                 targets.append(label)

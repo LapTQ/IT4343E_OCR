@@ -7,7 +7,7 @@ from utils.generals import *
 import matplotlib.pyplot as plt
 import json
 
-get_model2((124, 1900, 1), len(CHARACTERS)).summary()
+get_model((124, 1900, 1), len(CHARACTERS), option=1).summary()
 
 # USE TF.DATA
 train_dataset = get_tf_dataset(
@@ -21,7 +21,8 @@ train_dataset = get_tf_dataset(
     # dilate=2,
     normalize=True
 )
-for imgs, labels in train_dataset.take(1):
+for batch in train_dataset.take(1):
+    images, labels = batch['image'], batch['label']
     pass
 
 
@@ -39,13 +40,13 @@ for imgs, labels in train_dataset.take(1):
 # imgs, labels = next(iter(dataset))
 
 
-print(imgs.shape)
+print(images.shape)
 print(labels.shape)
 
 plt.figure(figsize=(20, 8))
 i = 0
-for img, label in zip(imgs, labels):
-    print(label)
+for img, label in zip(images, labels):
+    # print(label)
     plt.subplot(4, 1, i + 1)
     label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')
     plt.imshow(np.squeeze(img))
@@ -77,7 +78,7 @@ def CTCLoss(y_true, y_pred):
     label_length = tf.cast(tf.shape(y_true)[1], dtype="int64")
 
     input_length = input_length * tf.ones(shape=(batch_len, 1), dtype="int64")
-    label_length = label_length * tf.ones(shape=(batch_len, 1), dtype="int64")
+    label_length = tf.math.count_nonzero(y_true, axis=-1, keepdims=True, dtype="int64") #label_length * tf.ones(shape=(batch_len, 1), dtype="int64")
     loss = keras.backend.ctc_batch_cost(y_true, y_pred, input_length, label_length)
     return loss
 
@@ -99,28 +100,28 @@ def process_label(label, target_length=None, padding_values=0):
         )
 
     return label
-#
-# pred = np.array([
-#     [[0.1, 0.5, 0.3, 0.1],
-#      [0.2, 0.5, 0.2, 0.2],
-#      [0.1, 0.1, 0.1, 0.7],
-#      [0.1, 0.2, 0.5, 0.2],
-#      [0.1, 0.2, 0.5, 0.2],
-#      [0.1, 0.5, 0.3, 0.1],
-#      [0.2, 0.5, 0.2, 0.2],
-#      [0.1, 0.1, 0.1, 0.7],
-#      [0.2, 0.5, 0.2, 0.2]
-#      ]
-# ])
-# label = 'abaa'
-# label = process_label(label)
-# label = np.expand_dims(label, axis=0)
-# label = np.array([[1, 2, 1, 1, 0, 0, 0, 0]])
-# print(label)
-#
-# a = decode_batch_predictions(pred)
-# loss = CTCLoss(label, pred)
-# print(a)
-# print(loss)
+
+pred = np.array([
+    [[0.1, 0.5, 0.3, 0.1],
+     [0.2, 0.5, 0.2, 0.2],
+     [0.1, 0.1, 0.1, 0.7],
+     [0.1, 0.2, 0.5, 0.2],
+     [0.1, 0.2, 0.5, 0.2],
+     [0.1, 0.5, 0.3, 0.1],
+     [0.2, 0.5, 0.2, 0.2],
+     [0.1, 0.1, 0.1, 0.7],
+     [0.2, 0.5, 0.2, 0.2]
+     ]
+])
+label = 'abaa'
+label = process_label(label)
+label = np.expand_dims(label, axis=0)
+label = np.array([[1, 2, 1, 1, 0, 0, 0, 0, 0]])
+print(label)
+
+a = decode_batch_predictions(pred)
+loss = CTCLoss(label, pred)
+print(a)
+print(loss)
 
 

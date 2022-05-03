@@ -16,6 +16,8 @@ def CTCLoss(y_true, y_pred):
 class CTCLayer(keras.layers.Layer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # ctc_batch_cost managed to mask out padded sequence using label_length,
+        # So the cost won't include the padding 0 section
         self.loss_fn = keras.backend.ctc_batch_cost
 
     def call(self, y_true, y_pred):
