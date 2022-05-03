@@ -2,11 +2,12 @@ import tensorflow as tf
 from tensorflow import keras
 from utils.losses import *
 
-def get_model(image_shape, vocab_size, option=1):
-    # must be None???
+def get_model(image_shape, vocab_size, option=2):
+    # tại sao phải là None???
     input = keras.layers.Input(shape=(image_shape[0], None, image_shape[2]), name='image')
 
     if option == 1:
+        # kiểm tra ảnh hưởng của số chiều của filters và strides
         x = keras.layers.Conv2D(
             filters=32,
             kernel_size=(41, 11),
@@ -35,26 +36,25 @@ def get_model(image_shape, vocab_size, option=1):
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.LeakyReLU()(x)
 
-        x = keras.layers.Conv2D(filters=32, kernel_size=(5, 14), padding='same', kernel_initializer='he_normal')(x)
+        x = keras.layers.Conv2D(filters=32, kernel_size=(14, 5), strides=2, padding='same', kernel_initializer='he_normal')(x)
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.LeakyReLU()(x)
 
-        x = keras.layers.Conv2D(filters=64, kernel_size=(5, 14), strides=2, padding='same',
+        x = keras.layers.Conv2D(filters=64, kernel_size=(14, 5), strides=2, padding='same',
                                 kernel_initializer='he_normal')(x)
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.LeakyReLU()(x)
 
-        x = keras.layers.Conv2D(filters=128, kernel_size=(5, 14), padding='same', kernel_initializer='he_normal')(x)
+        x = keras.layers.Conv2D(filters=128, kernel_size=(14, 5), padding='same', kernel_initializer='he_normal')(x)
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.LeakyReLU()(x)
 
-        x = keras.layers.Conv2D(filters=256, kernel_size=(5, 14), strides=2, padding='same',
+        x = keras.layers.Conv2D(filters=256, kernel_size=(14, 5), strides=2, padding='same',
                                 kernel_initializer='he_normal')(x)
         x = keras.layers.BatchNormalization()(x)
         x = keras.layers.LeakyReLU()(x)
 
     x = keras.layers.Permute((2, 1, 3))(x)
-    # reshape to feed to RNNs
     x = keras.layers.Reshape((-1, x.shape[-2] * x.shape[-1]))(x)
     rnn_layers = 4
     rnn_units = 128
@@ -78,9 +78,8 @@ def get_model(image_shape, vocab_size, option=1):
     x = keras.layers.Dense(2 * rnn_units)(x)
     x = keras.layers.LeakyReLU()(x)
     x = keras.layers.Dropout(rate=0.2)(x)
+
     # +1 for the blank token: oov, 'a', 'b',..., blank
-    # +2 is to account for the two special tokens introduced by the CTC loss.
-    # The recommendation comes here: https://git.io/J0eXP.
     output = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
 
     model = keras.Model(input, output)

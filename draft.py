@@ -7,7 +7,7 @@ from utils.generals import *
 import matplotlib.pyplot as plt
 import json
 
-model = get_model((124, 1900, 1), CHAR_TO_NUM.vocabulary_size(), option=1)
+model = get_model((124, 1900, 1), CHAR_TO_NUM.vocabulary_size(), option=2)
 print(model.summary())
 
 # USE TF.DATA
