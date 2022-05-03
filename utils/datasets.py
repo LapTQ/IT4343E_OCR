@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 import os
 
-CHARACTERS = [x for x in " !%'#&()*+,-./0123456789:;?AÁẢÀÃẠÂẤẨẦẪẬĂẮẲẰẴẶBCDĐEÉẺÈẼẸÊẾỂỀỄỆFGHIÍỈÌĨỊJKLMNOÓỎÒÕỌÔỐỔỒỖỘƠỚỞỜỠỢPQRSTUÚỦÙŨỤƯỨỬỪỮỰVWXYÝỶỲỸỴZaáảàãạâấẩầẫậăắẳằẵặbcdđeéẻèẽẹêếểềễệfghiíỉìĩịjklmnoóỏòõọôốổồỗộơớởờỡợpqrstuúủùũụưứửừữựvwxyýỷỳỹỵz"]
+CHARACTERS = [x for x in "0123456789AÁẢÀÃẠÂẤẨẦẪẬĂẮẲẰẴẶBCDĐEÉẺÈẼẸÊẾỂỀỄỆFGHIÍỈÌĨỊJKLMNOÓỎÒÕỌÔỐỔỒỖỘƠỚỞỜỠỢPQRSTUÚỦÙŨỤƯỨỬỪỮỰVWXYÝỶỲỸỴZaáảàãạâấẩầẫậăắẳằẵặbcdđeéẻèẽẹêếểềễệfghiíỉìĩịjklmnoóỏòõọôốổồỗộơớởờỡợpqrstuúủùũụưứửừữựvwxyýỷỳỹỵz!%'#&()*+,-./:;? "]
 
 # for out-of-vocab token, use '' and the corresponding 0.
 CHAR_TO_NUM = keras.layers.StringLookup(
@@ -207,8 +207,8 @@ def get_tf_dataset(
     dataset = dataset.map(lambda x, y: (load_img(x), y), num_parallel_calls=tf.data.AUTOTUNE)
     # dataset = [(img_array, label_numbers),...]
     dataset = dataset.map(
-        lambda x, y: {
-            'image': process_img(
+        lambda x, y: (
+            process_img(
                 x,
                 grayscale=grayscale,
                 invert_color=invert_color,
@@ -218,11 +218,11 @@ def get_tf_dataset(
                 binarize=binarize,
                 threshold=threshold
             ),
-            'label': process_label(
+            process_label(
                 y,
                 target_length=label_length,
                 padding_values=0)
-        },
+        ),
         num_parallel_calls=tf.data.AUTOTUNE
     )
     dataset = dataset.prefetch(buffer_size=500)

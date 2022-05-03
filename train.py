@@ -77,7 +77,7 @@ def run(
             momentum=0.9,
             nesterov=True
         ),
-        # loss=CTCLoss
+        loss=CTCLoss
     )
 
     callbacks = [

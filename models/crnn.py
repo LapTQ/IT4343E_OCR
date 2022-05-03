@@ -80,11 +80,9 @@ def get_model(image_shape, vocab_size, option=2):
     # +1 for the blank token: oov, 'a', 'b',..., blank
     # +2 is to account for the two special tokens introduced by the CTC loss.
     # The recommendation comes here: https://git.io/J0eXP.
-    x = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
-    labels = keras.layers.Input(shape=(None,), name='label')
-    output = CTCLayer()(labels, x)
+    output = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
 
-    model = keras.Model(inputs=[input, labels], outputs=output)
+    model = keras.Model(input, output)
 
     return model
 
