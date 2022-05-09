@@ -206,4 +206,4 @@ class AddressDataset(keras.utils.Sequence):
             input_length = np.squeeze(input_length, axis=0)
             label_length = np.squeeze(label_length, axis=0)
 
-        return [input_, y_true, input_length, label_length], np.zeros(img_num)
+        return input_, y_true, input_length, label_length

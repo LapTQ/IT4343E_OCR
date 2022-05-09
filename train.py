@@ -68,7 +68,7 @@ def run(
     train_dt = AddressDataset(
         img_dir=train_data,
         label_path=os.path.join(train_data, 'labels.json'),
-        target_size=(118, 2167),
+        target_size=(target_height, target_width),
         grayscale=grayscale,
         time_steps=time_steps,
         batch_size=batch_size
@@ -78,15 +78,14 @@ def run(
     val_dt = AddressDataset(
         img_dir=val_data,
         label_path=os.path.join(train_data, 'labels.json'),
-        target_size=(118, 2167),
+        target_size=(target_height, target_width),
         grayscale=grayscale,
         time_steps=time_steps,
         batch_size=batch_size
     )
 
     model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=lr, momentum=0.9, nesterov=True),
-        loss=(lambda loss_out, zero: loss_out)
+        optimizer=keras.optimizers.Adam(learning_rate=lr),
     )
 
     callbacks = [
@@ -97,7 +96,7 @@ def run(
     ]
 
     history = model.fit(
-        x=train_dt,
+        train_dt,
         epochs=epochs,
         shuffle=True,
         validation_data=val_dt,
@@ -124,9 +123,9 @@ if __name__ == '__main__':
     ap.add_argument('--lr', default=1e-3, type=float)
     ap.add_argument('--reduce_lr_patience', default=4, type=int)
     ap.add_argument('--early_stop_patience', default=10, type=int)
-    ap.add_argument('--target_height', default=124, type=int)
-    ap.add_argument('--target_width', default=1900, type=int)
-    ap.add_argument('--time_steps', default=80, type=int)
+    ap.add_argument('--target_height', default=118, type=int)
+    ap.add_argument('--target_width', default=2167, type=int)
+    ap.add_argument('--time_steps', default=240, type=int)
     ap.add_argument('--grayscale', default=True, type=bool)
     ap.add_argument('--invert_color', default=False, type=bool)
     ap.add_argument('--dilate', default=0, type=int)

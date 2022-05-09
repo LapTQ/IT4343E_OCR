@@ -7,7 +7,9 @@ class CTCLayer(keras.layers.Layer):
         self.loss_fn = keras.backend.ctc_batch_cost
 
     def call(self, y_true, y_pred, input_length, label_length):
-        return self.loss_fn(y_true, y_pred, input_length, label_length)
+        loss = self.loss_fn(y_true, y_pred, input_length, label_length)
+        self.add_loss(loss)
+        return y_pred
 
 
 def get_base_model(input_shape, vocab_size):
@@ -60,9 +62,9 @@ def get_CTC_model(base_model):
     input_length = keras.layers.Input(shape=(1,), dtype=tf.int32)
     label_length = keras.layers.Input(shape=(1,), dtype=tf.int32)
 
-    loss_out = CTCLayer()(y_true, y_pred, input_length, label_length)
+    y_pred = CTCLayer()(y_true, y_pred, input_length, label_length)
 
-    model = keras.Model(inputs=[input_, y_true, input_length, label_length], outputs=loss_out)
+    model = keras.Model(inputs=[input_, y_true, input_length, label_length], outputs=y_pred)
 
     return model
 

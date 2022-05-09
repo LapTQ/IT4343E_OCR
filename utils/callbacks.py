@@ -22,6 +22,6 @@ class CallbackEval(keras.callbacks.Callback):
                 targets.append(label)
         wer_score = wer(targets, predictions)
         print(f'WER: {wer_score:.4f}')
-        for i in np.random.randint(0, len(predictions), 100):
-            print(f'True: {targets[i]}.')
-            print(f'Pred: {predictions[i]}.')
+        for i in np.random.randint(0, len(predictions), 24):
+            print(f'True: {targets[i]}')
+            print(f'Pred: {predictions[i]}')
