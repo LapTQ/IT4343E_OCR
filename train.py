@@ -2,7 +2,6 @@ import argparse
 from models.crnn import *
 from utils.generals import *
 from utils.datasets import *
-from utils.losses import *
 from utils.callbacks import *
 import tensorflow as tf
 from tensorflow import keras
@@ -20,7 +19,7 @@ def run(
         early_stop_patience,
         target_height,
         target_width,
-        time_steps,
+        # time_steps,
         grayscale,
         invert_color,
         dilate,
@@ -28,43 +27,27 @@ def run(
         shuffle,
         cache,
 ):
-    input_shape = (target_height, target_width) + (3 if not grayscale else 1,)
+
 
     if pretrained is not None:
+        print(f'[LOG] Loading pretrained model at {pretrained} ...')
         base_model = keras.models.load_model(pretrained)
-        print(f'Load pretrained model: {pretrained}')
+
+        target_height, target_width, depth = base_model.input.shape[1:]
+        grayscale = True if depth == 1 else False
+        print(f'[LOG] Image will be resized to configuration of pretrained model: {(target_height, target_width, depth)}')
     else:
+        input_shape = (target_height, target_width) + (3 if not grayscale else 1,)
+        print("Loading new model...")
         base_model = get_base_model(input_shape=input_shape, vocab_size=CHAR_TO_NUM.vocabulary_size())
-        print("Load new model")
+
     model = get_CTC_model(base_model)
     print(model.summary())
 
-    # train_dataset = get_tf_dataset(
-    #     img_dir=train_data,
-    #     label_path=os.path.join(train_data, 'labels.json'),
-    #     target_size=(target_height, target_width),
-    #     label_length=label_length,
-    #     batch_size=batch_size,
-    #     grayscale=grayscale,
-    #     invert_color=invert_color,
-    #     dilate=dilate,
-    #     normalize=normalize,
-    #     shuffle=shuffle,
-    #     cache=cache
-    # )
-    # val_dataset = get_tf_dataset(
-    #     img_dir=val_data,
-    #     label_path=os.path.join(val_data, 'labels.json'),
-    #     target_size=(target_height, target_width),
-    #     label_length=label_length,
-    #     batch_size=batch_size,
-    #     grayscale=grayscale,
-    #     invert_color=invert_color,
-    #     dilate=dilate,
-    #     normalize=normalize,
-    #     shuffle=False,
-    #     cache=cache
-    # )
+    print(f'[LOG] Image will {"" if grayscale else "NOT "}be converted to grayscale')
+
+    time_steps = base_model.output.shape[1]
+
     train_dt = get_tf_dataset(
         img_dir=train_data,
         label_path=os.path.join(train_data, 'labels.json'),
@@ -120,18 +103,18 @@ if __name__ == '__main__':
     ap.add_argument('--batch_size', default=32, type=int)
     ap.add_argument('--train_data', default='data/data_samples_2', type=str)
     ap.add_argument('--val_data', default='data/private_test', type=str)
-    ap.add_argument('--lr', default=1e-2, type=float)
+    ap.add_argument('--lr', default=1e-3, type=float)
     ap.add_argument('--reduce_lr_patience', default=4, type=int)
     ap.add_argument('--early_stop_patience', default=10, type=int)
     ap.add_argument('--target_height', default=118, type=int)
     ap.add_argument('--target_width', default=2202, type=int)
-    ap.add_argument('--time_steps', default=244, type=int)
+    # ap.add_argument('--time_steps', default=244, type=int)
     ap.add_argument('--grayscale', default=True, type=bool)
     ap.add_argument('--invert_color', default=False, type=bool)
     ap.add_argument('--dilate', default=0, type=int)
     ap.add_argument('--normalize', default=True, type=bool)
-    ap.add_argument('--shuffle', default=False, type=bool)
-    ap.add_argument('--cache', default=False, type=bool)
+    ap.add_argument('--shuffle', default=True, type=bool)
+    ap.add_argument('--cache', default=True, type=bool)
 
     args = vars(ap.parse_args())
 

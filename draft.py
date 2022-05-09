@@ -9,14 +9,21 @@ from utils.preprocessing import *
 import matplotlib.pyplot as plt
 import json
 
-# train_dataset = AddressDataset(
-#     img_dir='data/data_samples_2',
-#     label_path='data/data_samples_2/labels.json',
-#     target_size=(118, 2167),
-#     grayscale=True,
-#     time_steps=240,
-#     batch_size=4,
-# )
+
+base_model = get_base_model((118, 40, 1), 215)
+model = get_CTC_model(base_model)
+print(base_model.summary())
+
+train_dataset = get_tf_dataset(
+    img_dir='data/data_samples_2',
+    label_path='data/data_samples_2/labels.json',
+    target_size=(118, 2202),
+    grayscale=True,
+    time_steps=244,
+    batch_size=4,
+)
+
+
 #
 # inputs, y_true, input_length, label_length = next(iter(train_dataset))
 #
@@ -56,12 +63,5 @@ import json
 # plt.imshow(tf.cast(img, tf.uint8))
 # plt.show()
 
-base_model = get_base_model((118, 2202, 1), 215)
-# model = get_CTC_model(base_model)
-print(base_model.summary())
-# print(model.summary())
-#
-# i = iter(train_dataset)
-# for _ in range(2):
-#     dt = model(next(i))
+
 
