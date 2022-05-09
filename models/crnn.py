@@ -15,6 +15,8 @@ class CTCLayer(keras.layers.Layer):
 def get_base_model(input_shape, vocab_size):
     input_ = keras.layers.Input(shape=input_shape, name='input_img')
 
+    x = keras.layers.Rescaling(1/255.)(input_)
+
     x = keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu', name='conv_1')(input_)
     x = keras.layers.MaxPooling2D((3, 3), strides=3, name='max_1')(x)
     x = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu', name='conv_2')(x)
@@ -41,8 +43,10 @@ def get_base_model(input_shape, vocab_size):
     x = keras.layers.MaxPooling2D((3, 1), strides=(3, 1), name='max_3')(x)
     x = keras.layers.MaxPooling2D((3, 1), strides=(3, 1), name='max_4')(x)
     x = keras.layers.Reshape((x.shape[-2], x.shape[-1]), name='reshape')(x)
-    x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2, name='lstm_1'), name='bidirectional_1')(x)
-    x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2, name='lstm_2'), name='bidirectional_2')(x)
+    recurrent = keras.layers.LSTM(512, return_sequences=True, dropout=0.2, name='lstm_1')
+    x = keras.layers.Bidirectional(recurrent, name='bidirectional_1')(x)
+    recurrent = keras.layers.LSTM(512, return_sequences=True, dropout=0.2, name='lstm_2')
+    x = keras.layers.Bidirectional(recurrent, name='bidirectional_2')(x)
 
     output = keras.layers.Dense(vocab_size + 1, activation='softmax', name='dense')(x)
 

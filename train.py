@@ -53,6 +53,7 @@ def run(
         label_path=os.path.join(train_data, 'labels.json'),
         target_size=(target_height, target_width),
         grayscale=grayscale,
+        invert_color=invert_color,
         time_steps=time_steps,
         batch_size=batch_size
 
@@ -63,6 +64,7 @@ def run(
         label_path=os.path.join(val_data, 'labels.json'),
         target_size=(target_height, target_width),
         grayscale=grayscale,
+        invert_color=invert_color,
         time_steps=time_steps,
         batch_size=batch_size
     )
