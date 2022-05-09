@@ -116,6 +116,7 @@ def process_img_and_label(img, label, target_size, grayscale, time_steps):
     H, W = target_height, int(tf.shape(img)[W_AXIS] * target_height / tf.shape(img)[H_AXIS])
     img = tf.image.resize(img, (H, W))
     # img = np.pad(img, ((0, 0), (0, target_width - W), (0, 0)), mode='median')
+    tf.print(H, W)
     img = tf.pad(img, ((0, 0), (0, target_width - W), (0, 0)), mode='CONSTANT', constant_values=255)
     if grayscale:
         img = tf.image.rgb_to_grayscale(img)
@@ -124,6 +125,7 @@ def process_img_and_label(img, label, target_size, grayscale, time_steps):
     y_true = CHAR_TO_NUM(y_true)
     input_length = time_steps
     label_length = len(y_true)
+    tf.print(label_length)
     y_true = tf.pad(y_true, ((0, time_steps - len(y_true)),), mode='CONSTANT', constant_values=0)
 
     # return img, y_true, input_length, label_length

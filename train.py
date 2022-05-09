@@ -77,7 +77,7 @@ def run(
 
     val_dt = get_tf_dataset(
         img_dir=val_data,
-        label_path=os.path.join(train_data, 'labels.json'),
+        label_path=os.path.join(val_data, 'labels.json'),
         target_size=(target_height, target_width),
         grayscale=grayscale,
         time_steps=time_steps,
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     ap.add_argument('--batch_size', default=32, type=int)
     ap.add_argument('--train_data', default='data/data_samples_2', type=str)
     ap.add_argument('--val_data', default='data/private_test', type=str)
-    ap.add_argument('--lr', default=1e-3, type=float)
+    ap.add_argument('--lr', default=1e-2, type=float)
     ap.add_argument('--reduce_lr_patience', default=4, type=int)
     ap.add_argument('--early_stop_patience', default=10, type=int)
     ap.add_argument('--target_height', default=118, type=int)
