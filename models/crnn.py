@@ -1,85 +1,76 @@
 import tensorflow as tf
 from tensorflow import keras
-from utils.losses import *
 
-def get_model(image_shape, vocab_size, option=2):
-    # tại sao phải là None???
-    input = keras.layers.Input(shape=(image_shape[0], None, image_shape[2]), name='image')
+class CTCLayer(keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(CTCLayer, self).__init__(**kwargs)
+        self.loss_fn = keras.backend.ctc_batch_cost
 
-    if option == 1:
-        # kiểm tra ảnh hưởng của số chiều của filters và strides
-        x = keras.layers.Conv2D(
-            filters=32,
-            kernel_size=(41, 11),
-            strides=(2, 2),
-            padding='same',
-            # use_bias=False,
-            name='conv_1'
-        )(input)
-        x = keras.layers.BatchNormalization(name='bn_1')(x)
-        x = keras.layers.LeakyReLU(name='leaky_relu_1')(x)
+    def call(self, y_true, y_pred, input_length, label_length):
+        return self.loss_fn(y_true, y_pred, input_length, label_length)
 
-        x = keras.layers.Conv2D(
-            filters=32,
-            kernel_size=(21, 11),
-            strides=(2, 2),#(2, 1)
-            padding='same',
-            # use_bias=False,
-            name='conv_2'
-        )(x)
-        x = keras.layers.BatchNormalization(name='bn_2')(x)
-        x = keras.layers.LeakyReLU(name='leaky_relu_2')(x)
 
-    elif option == 2:
-        x = keras.layers.Conv2D(filters=16, kernel_size=(4, 14), strides=2, padding='same', kernel_initializer='he_normal')(input)
-        x = keras.layers.BatchNormalization()(x)
-        x = keras.layers.LeakyReLU()(x)
+def get_base_model(input_shape, vocab_size):
+    inputs = keras.layers.Input(shape=input_shape)
 
-        x = keras.layers.Conv2D(filters=32, kernel_size=(14, 5), strides=2, padding='same', kernel_initializer='he_normal')(x)
-        x = keras.layers.BatchNormalization()(x)
-        x = keras.layers.LeakyReLU()(x)
+    x = keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu')(inputs)
+    x = keras.layers.MaxPooling2D((3, 3), strides=3)(x)
+    x = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu')(x)
+    x = keras.layers.MaxPooling2D((3, 3), strides=3)(x)
+    x = keras.layers.Conv2D(256, (3, 3), padding='same')(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.ReLU()(x)
+    x_shortcut = x
+    x = keras.layers.Conv2D(256, (3, 3), padding='same')(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.Add()([x, x_shortcut])
+    x = keras.layers.ReLU()(x)
+    x = keras.layers.Conv2D(512, (3, 3), padding='same')(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.ReLU()(x)
+    x_shortcut = x
+    x = keras.layers.Conv2D(512, (3, 3), padding='same')(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.Add()([x, x_shortcut])
+    x = keras.layers.ReLU()(x)
+    x = keras.layers.Conv2D(1024, (3, 3), padding='same')(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.ReLU()(x)
+    x = keras.layers.MaxPooling2D((3, 1), strides=(3, 1))(x)
+    x = keras.layers.MaxPooling2D((3, 1), strides=(3, 1))(x)
+    x = keras.layers.Reshape((x.shape[-2], x.shape[-1]))(x)
+    x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2))(x)
+    x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2))(x)
 
-        x = keras.layers.Conv2D(filters=64, kernel_size=(14, 5), strides=2, padding='same', kernel_initializer='he_normal')(x)
-        x = keras.layers.BatchNormalization()(x)
-        x = keras.layers.LeakyReLU()(x)
+    outputs = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
 
-        x = keras.layers.Conv2D(filters=128, kernel_size=(14, 5), padding='same', kernel_initializer='he_normal')(x)
-        x = keras.layers.BatchNormalization()(x)
-        x = keras.layers.LeakyReLU()(x)
-
-        x = keras.layers.Conv2D(filters=256, kernel_size=(14, 5), padding='same', kernel_initializer='he_normal')(x)
-        x = keras.layers.BatchNormalization()(x)
-        x = keras.layers.LeakyReLU()(x)
-
-    x = keras.layers.Permute((2, 1, 3))(x)
-    x = keras.layers.Reshape((-1, x.shape[-2] * x.shape[-1]))(x)
-    rnn_layers = 4
-    rnn_units = 128
-    for i in range(1, rnn_layers + 1):
-        recurrent = keras.layers.GRU(
-                units=rnn_units,
-                activation='tanh',
-                recurrent_activation='sigmoid',
-                use_bias=True,
-                return_sequences=True,
-                reset_after=True,
-                name=f"gru_{i}",
-        )
-        x = keras.layers.Bidirectional(
-            recurrent,
-            name=f"bidirectional_{i}",
-            merge_mode='concat'
-        )(x)
-        if i < rnn_layers:
-            x = keras.layers.Dropout(rate=0.2)(x)
-    x = keras.layers.Dense(2 * rnn_units)(x)
-    x = keras.layers.LeakyReLU()(x)
-    x = keras.layers.Dropout(rate=0.2)(x)
-
-    # +1 for the blank token: oov, 'a', 'b',..., blank
-    output = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
-
-    model = keras.Model(input, output)
+    model = keras.Model(inputs, outputs)
 
     return model
+
+def get_CTC_model(base_model):
+    input_ = base_model.input
+    y_pred = base_model.output
+
+    # the length of label after padding is equal to time steps
+    # to we get the 2nd dimention
+    time_steps = y_pred.shape[1]
+
+    y_true = keras.layers.Input(shape=(time_steps,), dtype=tf.float32)
+    input_length = keras.layers.Input(shape=(1,), dtype=tf.int32)
+    label_length = keras.layers.Input(shape=(1,), dtype=tf.int32)
+
+    loss_out = CTCLayer()(y_true, y_pred, input_length, label_length)
+
+    model = keras.Model(inputs=[input_, y_true, input_length, label_length], outputs=loss_out)
+
+    return model
+
+
+
+
+
+
+
+
 
