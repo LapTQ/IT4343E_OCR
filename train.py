@@ -37,7 +37,7 @@ def run(
         base_model = get_base_model(input_shape=input_shape, vocab_size=CHAR_TO_NUM.vocabulary_size())
         print("Load new model")
     model = get_CTC_model(base_model)
-    print(base_model.summary())
+    print(model.summary())
 
     # train_dataset = get_tf_dataset(
     #     img_dir=train_data,
@@ -65,7 +65,7 @@ def run(
     #     shuffle=False,
     #     cache=cache
     # )
-    train_dt = AddressDataset(
+    train_dt = get_tf_dataset(
         img_dir=train_data,
         label_path=os.path.join(train_data, 'labels.json'),
         target_size=(target_height, target_width),
@@ -75,7 +75,7 @@ def run(
 
     )
 
-    val_dt = AddressDataset(
+    val_dt = get_tf_dataset(
         img_dir=val_data,
         label_path=os.path.join(train_data, 'labels.json'),
         target_size=(target_height, target_width),

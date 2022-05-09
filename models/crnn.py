@@ -13,9 +13,9 @@ class CTCLayer(keras.layers.Layer):
 
 
 def get_base_model(input_shape, vocab_size):
-    inputs = keras.layers.Input(shape=input_shape)
+    input_ = keras.layers.Input(shape=input_shape, name='input_img')
 
-    x = keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu')(inputs)
+    x = keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu')(input_)
     x = keras.layers.MaxPooling2D((3, 3), strides=3)(x)
     x = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu')(x)
     x = keras.layers.MaxPooling2D((3, 3), strides=3)(x)
@@ -44,9 +44,9 @@ def get_base_model(input_shape, vocab_size):
     x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2))(x)
     x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2))(x)
 
-    outputs = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
+    output = keras.layers.Dense(vocab_size + 1, activation='softmax')(x)
 
-    model = keras.Model(inputs, outputs)
+    model = keras.Model(input_, output)
 
     return model
 
@@ -58,9 +58,9 @@ def get_CTC_model(base_model):
     # to we get the 2nd dimention
     time_steps = y_pred.shape[1]
 
-    y_true = keras.layers.Input(shape=(time_steps,), dtype=tf.float32)
-    input_length = keras.layers.Input(shape=(1,), dtype=tf.int32)
-    label_length = keras.layers.Input(shape=(1,), dtype=tf.int32)
+    y_true = keras.layers.Input(shape=(time_steps,), dtype=tf.float32, name='y_true')
+    input_length = keras.layers.Input(shape=(1,), dtype=tf.int32, name='input_length')
+    label_length = keras.layers.Input(shape=(1,), dtype=tf.int32, name='label_length')
 
     y_pred = CTCLayer()(y_true, y_pred, input_length, label_length)
 

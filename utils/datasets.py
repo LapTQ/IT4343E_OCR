@@ -112,50 +112,54 @@ C_AXIS = -1
 def process_img_and_label(img, label, target_size, grayscale, time_steps):
 
     target_height, target_width = target_size
-    H, W = target_height, int(img.shape[W_AXIS] * target_height / img.shape[H_AXIS])
+    # H, W = target_height, int(img.shape[W_AXIS] * target_height / img.shape[H_AXIS])
+    H, W = target_height, int(tf.shape(img)[W_AXIS] * target_height / tf.shape(img)[H_AXIS])
     img = tf.image.resize(img, (H, W))
-    img = np.pad(img, ((0, 0), (0, target_width - W), (0, 0)), mode='median')
+    # img = np.pad(img, ((0, 0), (0, target_width - W), (0, 0)), mode='median')
+    img = tf.pad(img, ((0, 0), (0, target_width - W), (0, 0)), mode='CONSTANT', constant_values=255)
     if grayscale:
         img = tf.image.rgb_to_grayscale(img)
 
-    input_length = time_steps
-    label_length = len(label)
     y_true = tf.strings.unicode_split(label, input_encoding='UTF-8')
     y_true = CHAR_TO_NUM(y_true)
-    y_true = tf.pad(y_true, ((0, time_steps - label_length),), mode='CONSTANT', constant_values=0)
+    input_length = time_steps
+    label_length = len(y_true)
+    y_true = tf.pad(y_true, ((0, time_steps - len(y_true)),), mode='CONSTANT', constant_values=0)
+    tf.print(tf.shape(img), tf.shape(y_true), tf.shape(input_length), tf.shape(label_length))
 
-    return img, y_true, input_length, label_length
-#
-# def get_tf_dataset(
-#         img_dir,
-#         label_path,
-#         target_size,
-#         grayscale,
-#         time_steps,
-#         batch_size=None,
-#         shuffle=False,
-#         cache=False
-# ):
-#
-#     # load annotation file: {img_name: label}
-#     dataset = json.load(open(label_path, 'r'))
-#     # dataset = {img_path: label}
-#     dataset = {os.path.join(img_dir, img_name): label for img_name, label in dataset.items()}
-#     dataset = tf.data.Dataset.from_tensor_slices((dataset.keys(), dataset.values()))
-#
-#     # dataset = [(img_array, label_string),...]
-#     dataset = dataset.map(lambda x, y: (load_img(x), y), num_parallel_calls=tf.data.AUTOTUNE)
-#     # dataset = [{img, y_true, input_length, label_length},...]
-#     dataset = dataset.map(lambda x, y: process_img_and_label(x, y, target_size, grayscale, time_steps), num_parallel_calls=tf.data.AUTOTUNE)
-#     dataset = dataset.prefetch(buffer_size=500)
-#     if cache:
-#         dataset = dataset.cache()
-#     if shuffle:
-#         dataset = dataset.shuffle(500)
-#     if batch_size is not None:
-#         dataset = dataset.batch(batch_size)
-#
-#     return dataset
+    # return img, y_true, input_length, label_length
+    return {'input_img': img, 'y_true': y_true, 'input_length': input_length, 'label_length': label_length}
+
+def get_tf_dataset(
+        img_dir,
+        label_path,
+        target_size,
+        grayscale,
+        time_steps,
+        batch_size=None,
+        shuffle=False,
+        cache=False
+):
+
+    # load annotation file: {img_name: label}
+    dataset = json.load(open(label_path, 'r'))
+    # dataset = {img_path: label}
+    dataset = {os.path.join(img_dir, img_name): label for img_name, label in dataset.items()}
+    dataset = tf.data.Dataset.from_tensor_slices((dataset.keys(), dataset.values()))
+
+    # dataset = [(img_array, label_string),...]
+    dataset = dataset.map(lambda x, y: (load_img(x), y), num_parallel_calls=tf.data.AUTOTUNE)
+    # dataset = [{img, y_true, input_length, label_length},...]
+    dataset = dataset.map(lambda x, y: process_img_and_label(x, y, target_size, grayscale, time_steps), num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.prefetch(buffer_size=500)
+    if cache:
+        dataset = dataset.cache()
+    if shuffle:
+        dataset = dataset.shuffle(500)
+    if batch_size is not None:
+        dataset = dataset.batch(batch_size)
+
+    return dataset
 
 
 

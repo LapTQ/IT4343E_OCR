@@ -58,8 +58,9 @@ inputs, y_true, input_length, label_length = next(iter(train_dataset))
 
 base_model = get_base_model((118, 2167, 1), 215)
 model = get_CTC_model(base_model)
+print(model.summary())
 
 i = iter(train_dataset)
-for _ in range(3):
+for _ in range(2):
     dt = model(next(i))
 
