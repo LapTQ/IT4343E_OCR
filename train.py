@@ -19,7 +19,6 @@ def run(
         early_stop_patience,
         target_height,
         target_width,
-        # time_steps,
         grayscale,
         invert_color,
         dilate,
@@ -110,7 +109,6 @@ if __name__ == '__main__':
     ap.add_argument('--early_stop_patience', default=10, type=int)
     ap.add_argument('--target_height', default=118, type=int)
     ap.add_argument('--target_width', default=2202, type=int)
-    # ap.add_argument('--time_steps', default=244, type=int)
     ap.add_argument('--grayscale', default=True, type=bool)
     ap.add_argument('--invert_color', default=False, type=bool)
     ap.add_argument('--dilate', default=0, type=int)

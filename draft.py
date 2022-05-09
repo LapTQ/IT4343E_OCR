@@ -21,6 +21,7 @@ train_dataset = get_tf_dataset(
     label_path='data/data_samples_2/labels.json',
     target_size=(118, 2300),
     grayscale=True,
+    invert_color=True,
     time_steps=time_steps,
     batch_size=4,
     shuffle=True

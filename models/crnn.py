@@ -17,7 +17,7 @@ def get_base_model(input_shape, vocab_size):
 
     x = keras.layers.Rescaling(1/255.)(input_)
 
-    x = keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu', name='conv_1')(input_)
+    x = keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu', name='conv_1')(x)
     x = keras.layers.MaxPooling2D((3, 3), strides=3, name='max_1')(x)
     x = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu', name='conv_2')(x)
     x = keras.layers.MaxPooling2D((3, 3), strides=3, name='max_2')(x)
