@@ -125,7 +125,6 @@ def process_img_and_label(img, label, target_size, grayscale, time_steps):
     input_length = time_steps
     label_length = len(y_true)
     y_true = tf.pad(y_true, ((0, time_steps - len(y_true)),), mode='CONSTANT', constant_values=0)
-    tf.print(tf.shape(img), tf.shape(y_true), tf.shape(input_length), tf.shape(label_length))
 
     # return img, y_true, input_length, label_length
     return {'input_img': img, 'y_true': y_true, 'input_length': input_length, 'label_length': label_length}
