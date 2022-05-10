@@ -1,4 +1,14 @@
 
+untraced function
+scan ảnh trước để xem kích thước ảnh thế nào rồi resize cố định về h= 118, tại sau cùng thì chỉ có 1 neuron
+variable length
+tạo metric WER thay cho tính
+preprocessing layers
+augmentation
+
+
+
+
 
 
 ## References
