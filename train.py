@@ -35,7 +35,7 @@ def run(
         grayscale = True if depth == 1 else False
         print(f'[LOG] Image will be resized to configuration of pretrained model: {(target_height, target_width, depth)}')
     else:
-        input_shape = (target_height, target_width) + (3 if not grayscale else 1,)
+        input_shape = (target_height, target_width, 3)
         print("Loading new model...")
         base_model = get_base_model(
             input_shape=input_shape,
