@@ -22,7 +22,6 @@ def run(
         grayscale,
         invert_color,
         dilate,
-        normalize,
         shuffle,
         cache,
 ):
@@ -38,7 +37,13 @@ def run(
     else:
         input_shape = (target_height, target_width) + (3 if not grayscale else 1,)
         print("Loading new model...")
-        base_model = get_base_model(input_shape=input_shape, vocab_size=CHAR_TO_NUM.vocabulary_size())
+        base_model = get_base_model(
+            input_shape=input_shape,
+            vocab_size=CHAR_TO_NUM.vocabulary_size(),
+            grayscale=grayscale,
+            invert_color=invert_color,
+            input_normalized=False
+        )
 
     model = get_CTC_model(base_model)
     print(model.summary())
@@ -51,8 +56,8 @@ def run(
         img_dir=train_data,
         label_path=os.path.join(train_data, 'labels.json'),
         target_size=(target_height, target_width),
-        grayscale=grayscale,
-        invert_color=invert_color,
+        # grayscale=grayscale,
+        # invert_color=invert_color,
         time_steps=time_steps,
         batch_size=batch_size
 
@@ -62,8 +67,8 @@ def run(
         img_dir=val_data,
         label_path=os.path.join(val_data, 'labels.json'),
         target_size=(target_height, target_width),
-        grayscale=grayscale,
-        invert_color=invert_color,
+        # grayscale=grayscale,
+        # invert_color=invert_color,
         time_steps=time_steps,
         batch_size=batch_size
     )
@@ -112,7 +117,6 @@ if __name__ == '__main__':
     ap.add_argument('--grayscale', default=True, type=bool)
     ap.add_argument('--invert_color', default=False, type=bool)
     ap.add_argument('--dilate', default=0, type=int)
-    ap.add_argument('--normalize', default=True, type=bool)
     ap.add_argument('--shuffle', default=True, type=bool)
     ap.add_argument('--cache', default=True, type=bool)
 

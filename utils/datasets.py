@@ -28,17 +28,24 @@ def load_img(path):
     img = tf.image.decode_png(img_string, channels=3)
     return img
 
-def process_img_and_label(img, label, target_size, grayscale, invert_color, time_steps):
+def process_img_and_label(
+        img,
+        label,
+        target_size,
+        # grayscale,
+        # invert_color,
+        time_steps
+):
 
     target_height, target_width = target_size
     H, W = target_height, int(tf.shape(img)[W_AXIS] * target_height / tf.shape(img)[H_AXIS])
     img = tf.image.resize(img, (H, W))
     # img = np.pad(img, ((0, 0), (0, target_width - W), (0, 0)), mode='median')
     img = tf.pad(img, ((0, 0), (0, target_width - W), (0, 0)), mode='CONSTANT', constant_values=255)
-    if grayscale:
-        img = tf.image.rgb_to_grayscale(img)
-    if invert_color:
-        img = 255. - img
+    # if grayscale:
+    #     img = tf.image.rgb_to_grayscale(img)
+    # if invert_color:
+    #     img = 255. - img
 
     y_true = tf.strings.unicode_split(label, input_encoding='UTF-8')
     y_true = CHAR_TO_NUM(y_true)
@@ -52,7 +59,7 @@ def get_tf_dataset(
         img_dir,
         label_path,
         target_size,
-        grayscale,
+        # grayscale,
         invert_color,
         time_steps,
         batch_size=None,
@@ -68,7 +75,13 @@ def get_tf_dataset(
 
     # dataset = [(img_array, label_string),...]
     dataset = dataset.map(lambda x, y: (load_img(x), y), num_parallel_calls=tf.data.AUTOTUNE)
-    dataset = dataset.map(lambda x, y: process_img_and_label(x, y, target_size, grayscale, invert_color, time_steps), num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.map(lambda x, y: process_img_and_label(
+        x,
+        y,
+        target_size,
+        # grayscale,
+        # invert_color,
+        time_steps), num_parallel_calls=tf.data.AUTOTUNE)
 
     dataset = dataset.prefetch(buffer_size=500)
     if cache: dataset = dataset.cache()
