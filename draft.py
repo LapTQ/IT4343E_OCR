@@ -7,42 +7,45 @@ import numpy as np
 from utils.generals import *
 from utils.preprocessing import *
 import matplotlib.pyplot as plt
+from tensorflow import keras
 import json
 
 
-base_model = get_base_model((118, 2300, 1), 214)
+base_model = get_base_model((118, 2202, 3), 214, grayscale=True, invert_color=True, input_normalized=False)
 model = get_CTC_model(base_model)
-print(base_model.summary())
+input = base_model.input
+output = base_model.get_layer('rgb2_gray').output
+print([layer.name for layer in base_model.layers])
+model = keras.Model(inputs=input, outputs=output)
+print(model.summary())
 
 time_steps = base_model.output.shape[1]
 
 train_dataset = get_tf_dataset(
     img_dir='data/data_samples_2',
     label_path='data/data_samples_2/labels.json',
-    target_size=(118, 2300),
-    grayscale=True,
-    invert_color=True,
+    target_size=(118, 2202),
+    # grayscale=True,
+    # invert_color=True,
     time_steps=time_steps,
     batch_size=4,
-    shuffle=True
+    # shuffle=True
 )
 for batch in train_dataset.take(1):
     pass
 
 
 input_img, y_true, input_length, label_length = batch.values()
+input_img = model.predict(input_img)
 
-print(input_img)
-print(y_true.shape)
-print(input_length.shape)
-print(label_length.shape)
+# print(input_img)
+# print(y_true.shape)
+# print(input_length.shape)
+# print(label_length.shape)
 
 plt.figure(figsize=(20, 8))
 i = 0
 for img, label, input_len, label_len in zip(input_img, y_true, input_length, label_length):
-    print(label)
-    print(input_len)
-    print(label_len)
     plt.subplot(4, 1, i + 1)
     label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')
     plt.imshow(np.squeeze(img), cmap='gray')
