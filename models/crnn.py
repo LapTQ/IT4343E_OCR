@@ -45,6 +45,7 @@ def get_base_model(input_shape, vocab_size, grayscale, invert_color, input_norma
     x = keras.layers.ReLU()(x)
     x = keras.layers.MaxPooling2D((3, 1), strides=(3, 1), name='max_3')(x)
     x = keras.layers.MaxPooling2D((3, 1), strides=(3, 1), name='max_4')(x)
+
     x = keras.layers.Reshape((x.shape[-2], x.shape[-1]), name='reshape')(x)
     # x = keras.layers.Permute((2, 1, 3))(x)
     # x = keras.layers.Reshape((-1, x.shape[-2] * x.shape[-1]))(x)
