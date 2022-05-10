@@ -18,7 +18,7 @@ def get_base_model(input_shape, vocab_size, grayscale, invert_color, input_norma
 
     x = keras.layers.Rescaling(1 / 255.)(input_) if not input_normalized else input_
     if grayscale:
-        x = RGB2Gray(invert_color=invert_color, input_normalized=input_normalized)(x)
+        x = RGB2Gray(invert_color=invert_color, input_normalized=True)(x)
 
     x = keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu', name='conv_1')(x)
     x = keras.layers.MaxPooling2D((3, 3), strides=3, name='max_1')(x)
@@ -49,8 +49,8 @@ def get_base_model(input_shape, vocab_size, grayscale, invert_color, input_norma
     x = keras.layers.Permute((2, 1, 3))(x)
     x = keras.layers.Reshape((-1, x.shape[-2] * x.shape[-1]))(x)
 
-    x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2, name='lstm_1'), name='bdr_1')(x)
-    x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2, name='lstm_2'), name='bdr_2')(x)
+    x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2, name='ls_1'), name='bdr_1')(x)
+    x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2, name='ls_2'), name='bdr_2')(x)
     output = keras.layers.Dense(vocab_size + 1, activation='softmax', name='dense')(x)
 
     model = keras.Model(input_, output)

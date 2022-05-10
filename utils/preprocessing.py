@@ -52,7 +52,6 @@ class RGB2Gray(base_layer.Layer):
     def __init__(self, invert_color, input_normalized, **kwargs):
         self.invert_color = invert_color
         self.input_normalized = input_normalized
-        self.max_value = 1. if self.input_normalized else 255.
         super(RGB2Gray, self).__init__(**kwargs)
         base_preprocessing_layer.keras_kpl_gauge.get_cell('RGB2Gray').set(True)
 
@@ -73,7 +72,8 @@ class RGB2Gray(base_layer.Layer):
 
     def call(self, inputs):
         outputs = tf.image.rgb_to_grayscale(inputs)
-        if self.invert_color: outputs = self.max_value - outputs
+        if self.invert_color:
+            outputs = (1. if self.input_normalized else 255.) - outputs
         return outputs
 
 

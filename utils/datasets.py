@@ -60,7 +60,7 @@ def get_tf_dataset(
         label_path,
         target_size,
         # grayscale,
-        invert_color,
+        # invert_color,
         time_steps,
         batch_size=None,
         shuffle=False,
