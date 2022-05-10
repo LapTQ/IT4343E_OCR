@@ -14,9 +14,9 @@ class CallbackEval(keras.callbacks.Callback):
         predictions = []
         targets = []
         for batch in self.dataset:
-            preds = self.model.predict(batch)
-            preds = decode_batch_predictions(preds)
-            predictions.extend(preds)
+            y_pred = self.model.predict(batch)
+            y_pred = decode_batch_predictions(y_pred)
+            predictions.extend(y_pred)
             for label in batch['y_true']:
                 label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')
                 targets.append(label)
