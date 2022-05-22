@@ -1,8 +1,33 @@
+=========================================
+TÁCH VÀ ALIGN PHẦN GIẤY TRONG ẢNH SCAN
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+tìm hiểu tại sao ở bước Permute lại làm mô hình không học được
 untraced function
 scan ảnh trước để xem kích thước ảnh thế nào rồi resize cố định về h= 118, tại sau cùng thì chỉ có 1 neuron
-variable length
-tạo metric WER thay cho tính
+variable length, phần này chắc là height của ảnh là cố định 118 rồi, còn chiều dài thì tự tính được
+tìm hiểu mạng CNN khác hiệu quả hơn
+thay thế LSTM bằng attention xem sao?
+tạo metric WER để early stopping tại điểm tốt nhất
 preprocessing layers
 augmentation
 

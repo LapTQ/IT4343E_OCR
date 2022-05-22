@@ -13,3 +13,4 @@ def decode_batch_predictions(pred):
         result = tf.strings.reduce_join(NUM_TO_CHAR(result)).numpy().decode("utf-8")
         output_text.append(result)
     return output_text
+
