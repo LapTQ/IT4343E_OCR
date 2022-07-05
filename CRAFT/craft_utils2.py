@@ -16,6 +16,74 @@ def warpCoord(Minv, pt):
     return np.array([out[0]/out[2], out[1]/out[2]])
 """ end of auxilary functions """
 
+def getContours(textmap, linkmap, text_threshold, link_threshold, low_text):
+    # # TODO thử xong thì xóa đoạn code này
+    # with open('cache/textmap.pkl', 'wb') as f:
+    #     pickle.dump(textmap, f)
+    # f.close()
+    # with open('cache/linkmap.pkl', 'wb') as f:
+    #     pickle.dump(linkmap, f)
+    # f.close()
+
+    linkmap = linkmap.copy()
+    textmap = textmap.copy()
+    img_h, img_w = textmap.shape
+
+    """ labeling method """
+    # dùng ngưỡng để tạo mask cho region và link
+    # TODO thử thay global threshold
+    ret, text_score = cv2.threshold(textmap, low_text, 1, 0)
+    ret, link_score = cv2.threshold(linkmap, link_threshold, 1, 0)
+
+    # gộp mask của region và link
+    # ở đây dùng phép công, lấy clip (0, 1), nhưng chắc là kết quả sau cùng của nó thì giống với phép OR thôi
+    # TODO thử cách quét qua từng link score, rồi xem những region score nào dính với nó
+    text_score_comb = np.clip(text_score + link_score, 0, 1)
+    nLabels, labels, stats, centroids = cv2.connectedComponentsWithStats(text_score_comb.astype(np.uint8),
+                                                                         connectivity=4)
+
+    contours = []
+    for k in range(1,nLabels):
+        # size filtering
+        size = stats[k, cv2.CC_STAT_AREA]
+        if size < 10: continue
+
+        # thresholding
+        if np.max(textmap[labels==k]) < text_threshold: continue
+
+        # tạo segmentation map CHỈ chứa các region thuộc cc thứ k
+        segmap = np.zeros(textmap.shape, dtype=np.uint8)
+        segmap[labels == k] = 255
+        segmap_copy = segmap.copy()
+        segmap[np.logical_and(link_score == 1, text_score == 0)] = 0  # nhằm loại bỏ nhiễu
+
+        # tính tọa độ của 4 góc  (chừa ra một ít)
+        x, y = stats[k, cv2.CC_STAT_LEFT], stats[k, cv2.CC_STAT_TOP]
+        w, h = stats[k, cv2.CC_STAT_WIDTH], stats[k, cv2.CC_STAT_HEIGHT]
+        niter = int(math.sqrt(size * min(w, h) / (w * h)) * 2)
+        sx, ex, sy, ey = x - niter, x + w + niter + 1, y - niter, y + h + niter + 1
+        # boundary check
+        if sx < 0: sx = 0
+        if sy < 0: sy = 0
+        if ex >= img_w: ex = img_w
+        if ey >= img_h: ey = img_h
+
+        inner = np.roll(np.array(np.where(segmap != 0)), 1, axis=0).transpose().reshape(-1, 2)
+        x1, y1, ww, hh = cv2.boundingRect(inner)
+        mask = np.zeros_like(segmap_copy)
+        mask[y1:y1 + hh, x1:x1 + ww] = 255
+        segmap_copy = np.logical_and(segmap_copy, mask).astype(np.uint8) * 255
+
+        # dilate các segment của từng chữ, TỐI ĐA trong vùng của 4 góc vừa tính
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1 + niter, 1 + niter))
+        segmap[sy:ey, sx:ex] = cv2.dilate(segmap[sy:ey, sx:ex], kernel, iterations=3)
+        segmap = np.logical_or(segmap, segmap_copy).astype(np.uint8) * 255
+
+        [cnt], hierarchy = cv2.findContours(segmap, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+
+        contours.append(cnt.reshape(-1, 2).astype(np.float32))
+
+    return contours
 
 def getDetBoxes_core(textmap, linkmap, text_threshold, link_threshold, low_text):
     """
@@ -29,13 +97,13 @@ def getDetBoxes_core(textmap, linkmap, text_threshold, link_threshold, low_text)
     """
     # prepare data
     # TODO thử xong thì xóa đoạn code này
-    # with open('cache/textmap.pkl', 'wb') as f:
-    #     pickle.dump(textmap, f)
-    # f.close()
-    # with open('cache/linkmap.pkl', 'wb') as f:
-    #     pickle.dump(linkmap, f)
-    # f.close()
-
+    with open('cache/textmap.pkl', 'wb') as f:
+        pickle.dump(textmap, f)
+    f.close()
+    with open('cache/linkmap.pkl', 'wb') as f:
+        pickle.dump(linkmap, f)
+    f.close()
+    
     linkmap = linkmap.copy()
     textmap = textmap.copy()
     img_h, img_w = textmap.shape

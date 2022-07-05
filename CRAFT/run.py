@@ -1,31 +1,16 @@
-"""  
-Copyright (c) 2019-present NAVER Corp.
-MIT License
-"""
-
-# -*- coding: utf-8 -*-
-import sys
-import os
-import time
 import argparse
+import os
 
 import torch
-import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 
-from PIL import Image
-
 import cv2
-from skimage import io
 import numpy as np
-import craft_utils
-import imgproc
-import file_utils
-import json
-import zipfile
-import pickle
 
+import file_utils
+import craft_utils2 as craft_utils
+import imgproc
 from craft import CRAFT
 
 from collections import OrderedDict
@@ -43,46 +28,28 @@ def copyStateDict(state_dict):
 def str2bool(v):
     return v.lower() in ("yes", "y", "true", "t", "1")
 
-parser = argparse.ArgumentParser(description='CRAFT Text Detection')
+parser = argparse.ArgumentParser()
 parser.add_argument('--trained_model', default='weights/craft_mlt_25k.pth', type=str, help='pretrained model')
 parser.add_argument('--text_threshold', default=0.7, type=float, help='text confidence threshold')
-parser.add_argument('--low_text', default=0.4, type=float, help='text low-bound score')
+# TODO đang để thresh cụ thể cho 1 tờ giấy khai sinh
+parser.add_argument('--low_text', default=0.5, type=float, help='text low-bound score')
 parser.add_argument('--link_threshold', default=0.4, type=float, help='link confidence threshold')
 parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda for inference')
 parser.add_argument('--canvas_size', default=1280, type=int, help='image size for inference')
 parser.add_argument('--mag_ratio', default=1.5, type=float, help='image magnification ratio')
-parser.add_argument('--poly', default=False, type=str2bool, help='enable polygon type') # đã xóa action='store_true', thêm cái type
-parser.add_argument('--show_time', default=False, action='store_true', help='show processing time')
 parser.add_argument('--test_folder', default='data/', type=str, help='folder path to input images')
-parser.add_argument('--refine', default=False, type=str2bool, help='enable link refiner')  # đã xóa action='store_true', thêm cái type
+parser.add_argument('--refine', default=True, type=str2bool, help='enable link refiner')  # đã xóa action='store_true', thêm cái type
 parser.add_argument('--refiner_model', default='weights/craft_refiner_CTW1500.pth', type=str, help='pretrained refiner model')
 
 args = parser.parse_args()
 
-
-
-
-""" For test images in a folder """
 image_list, _, _ = file_utils.get_files(args.test_folder)
 
-result_folder = './result/'
-if not os.path.isdir(result_folder):
-    os.mkdir(result_folder)
+cache_folder = './cache/'
+if not os.path.isdir(cache_folder):
+    os.mkdir(cache_folder)
 
-def test_net(net, image, text_threshold, link_threshold, low_text, cuda, poly, refine_net=None):
-    """
-
-    :param net:
-    :param image: ảnh đầu vào là RGB, shape (H, W, 3)
-    :param text_threshold:
-    :param link_threshold:
-    :param low_text:
-    :param cuda:
-    :param poly:
-    :param refine_net:
-    :return:
-    """
-    t0 = time.time()
+def test_net(net, image, text_threshold, link_threshold, low_text, cuda, refine_net=None):
 
     # NOTE: Xử lý ảnh trước khi đưa vào mô hình:
     # 1. resize ảnh giữ nguyên tỉ lệ, mặc định là gấp lên 1.5 lần nhưng không quá 1280
@@ -97,53 +64,27 @@ def test_net(net, image, text_threshold, link_threshold, low_text, cuda, poly, r
     if cuda:
         x = x.cuda()
 
-    # forward pass
-    # mô hình trả về y (gồm region score, affinity score), và feature map ở stage 4
     with torch.no_grad():
         y, feature = net(x)
 
-    # make score and link map
-    score_text = y[0,:,:,0].cpu().data.numpy()  # score_text là region score
-    score_link = y[0,:,:,1].cpu().data.numpy()  # score_link là affinity score
+    score_text = y[0,:,:,0].cpu().data.numpy()
+    score_link = y[0,:,:,1].cpu().data.numpy()
 
-    # nếu như dùng Refiner (cho câu dài) thì score_link sẽ là link score
     if refine_net is not None:
         with torch.no_grad():
             y_refiner = refine_net(y, feature)
         score_link = y_refiner[0,:,:,0].cpu().data.numpy()
 
-    t0 = time.time() - t0
-    t1 = time.time()
-
     # Post-processing
-    boxes, polys = craft_utils.getDetBoxes(score_text, score_link, text_threshold, link_threshold, low_text, poly)
+    contours = craft_utils.getContours(score_text, score_link, text_threshold, link_threshold, low_text)
 
-    # có box rồi còn điều chỉnh gì? Hmmm phải điều tra
     # coordinate adjustment
-    boxes = craft_utils.adjustResultCoordinates(boxes, ratio_w, ratio_h)
-    polys = craft_utils.adjustResultCoordinates(polys, ratio_w, ratio_h)
-    for k in range(len(polys)):
-        if polys[k] is None: polys[k] = boxes[k]
+    contours = craft_utils.adjustResultCoordinates(contours, ratio_w, ratio_h)
 
-    t1 = time.time() - t1
-
-    # đoạn này đang đưa thành heatmap
-    # render results (optional)
-    render_img = score_text.copy()
-    render_img = np.hstack((render_img, score_link))
-    ret_score_text = imgproc.cvt2HeatmapImg(render_img)
-
-    if args.show_time : print("\ninfer/postproc time : {:.3f}/{:.3f}".format(t0, t1))
-
-    # sửa để return thêm score_text là dạng float [0, 1] (chưa clip),
-    # còn ret_score_text là heatmap của nó, dạng int [0, 255]
-    return boxes, polys, score_text, ret_score_text
-
-
+    return contours
 
 if __name__ == '__main__':
-    # load net
-    net = CRAFT()     # initialize
+    net = CRAFT()
 
     print('Loading weights from checkpoint (' + args.trained_model + ')')
     if args.cuda:
@@ -158,10 +99,10 @@ if __name__ == '__main__':
 
     net.eval()
 
-    # LinkRefiner
     refine_net = None
     if args.refine:
         from refinenet import RefineNet
+
         refine_net = RefineNet()
         print('Loading weights of refiner from checkpoint (' + args.refiner_model + ')')
         if args.cuda:
@@ -172,27 +113,17 @@ if __name__ == '__main__':
             refine_net.load_state_dict(copyStateDict(torch.load(args.refiner_model, map_location='cpu')))
 
         refine_net.eval()
-        # TODO: thử comment
-        #  nếu như dùng refiner thì sẽ tìm poly
-        #  Đã comment
-        # args.poly = True
 
-    t = time.time()
-
-    # load data
     for k, image_path in enumerate(image_list):
         print("Test image {:d}/{:d}: {:s}".format(k+1, len(image_list), image_path), end='\r')
+        filename, file_ext = os.path.splitext(os.path.basename(image_path))
 
         # Load ảnh RGB, shape (H, W, 3)
         image = imgproc.loadImage(image_path)
+        image = imgproc.enhance_image(image, BGR=False)     # BGR order
+        cv2.imwrite(os.path.join(cache_folder, filename + '.jpg'), image)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)      # RGB order
 
-        bboxes, polys, score_text, ret_score_text = test_net(net, image, args.text_threshold, args.link_threshold, args.low_text, args.cuda, args.poly, refine_net)
+        contours = test_net(net, image, args.text_threshold, args.link_threshold, args.low_text, args.cuda, refine_net)
 
-        # save score text
-        filename, file_ext = os.path.splitext(os.path.basename(image_path))
-        mask_file = result_folder + "/res_" + filename + '_mask.jpg'
-        cv2.imwrite(mask_file, ret_score_text)
-
-        file_utils.saveResult(image_path, image[:,:,::-1], polys, dirname=result_folder)
-
-    print("elapsed time : {}s".format(time.time() - t))
+        file_utils.saveResult(image_path, image[:,:,::-1], contours, dirname=cache_folder)

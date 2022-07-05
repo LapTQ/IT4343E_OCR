@@ -8,6 +8,27 @@ import numpy as np
 from skimage import io
 import cv2
 
+def enhance_image(img, BGR):
+    assert BGR is True or BGR is False, f'Invalid argument: BGR must be True or False, got {BGR}'
+    if not BGR:
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = img.astype(np.int32)
+
+    val, cnt = np.unique(img, return_counts=True)
+    med = cnt[np.argmin(np.abs(cnt - int(np.median(cnt))))]
+    alpha = np.max(val[np.where(cnt == med)])
+
+    # cụ thể cho giấy khai sinh
+    # TODO khái quát hóa
+    img = (img - alpha) * 3
+
+    img = np.clip(img, 0, 255)
+    img = img.astype(np.uint8)
+
+    return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+
 def loadImage(img_file):
     img = io.imread(img_file)           # RGB order
     if img.shape[0] == 2: img = img[0]
