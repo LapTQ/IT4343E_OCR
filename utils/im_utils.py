@@ -390,7 +390,7 @@ def fix_blur(img):
 
 
 if __name__ == '__main__':
-    path = '/media/tran/003D94E1B568C6D11/Workingspace/handwritten_text_recognition/3.jpeg'
+    path = '/media/tran/003D94E1B568C6D11/Workingspace/handwritten_text_recognition/8.jpg'
     img  = cv2.imread(path)
 
     # img = motion_blur(img, kernel, noise=3)
@@ -399,9 +399,9 @@ if __name__ == '__main__':
 
     # corners = get_corners(img)
     # img = align(img, corners)
-    #
-    # img = clean(img, BGR=True)
-    # img = deskew(img)
+
+    img = clean(img, BGR=True)
+    img = deskew(img)
 
     plt.figure(figsize=(20, 20)); plt.imshow(img[:, :, ::-1] if len(img.shape) == 3 else img); plt.show()
 
