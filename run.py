@@ -24,8 +24,15 @@ def main(opt):
 
     img = cv2.imread(opt['input'])
 
+    # img = fix_blur(img)
+
     corners = get_corners(img)
     img = align(img, corners)
+
+    img = clean(img, BGR=True)
+    # img = deskew(img)
+
+    # https://github.com/akilarif/Text-Detection-in-Natural-Images-Using-SWT-and-MSER-followed-by-SWT
 
 
 

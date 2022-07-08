@@ -1,6 +1,21 @@
 import numpy as np
 import cv2
+import imutils
+from tqdm import tqdm
 
+import matplotlib.pyplot as plt
+
+
+def query(msg):
+    return not bool(input('[QUERY] ' + msg + ' [<ENTER> for yes] ').strip())
+
+
+def info(msg):
+    print('[INFO] ' + msg)
+
+
+def warn(msg):
+    print('[WARNING] ' + msg)
 
 def binary_segment(img):
 
@@ -94,7 +109,7 @@ def select_corners():
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-        corner_selected = input('[QUERY] Are you sure with your choice? [y/n] ').strip()[0].lower() == 'y'
+        corner_selected = query('Are you sure with your choice?')
 
     pts = np.array(buffer).reshape(4, 1, 2)
 
@@ -116,7 +131,7 @@ def good_corners(img, pts):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    return input('[QUERY] Auto detect corners. Is this okay? [y/n] ').strip()[0].lower() == 'y'
+    return query('Auto detect corners. Is this okay?')
 
 
 def arrange_corners(pts):
@@ -145,7 +160,7 @@ def get_corners(img):
     if pts is not None:
         good = good_corners(img, pts)
 
-    print(f"[INFO] Proposed corners are {'' if good else 'not '}good")
+    info(f"Proposed corners are {'' if good else 'not '}good.")
     if not good:
         pts = select_corners()
 
@@ -194,16 +209,203 @@ def clean(img, BGR):
     return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
 
+def local_max(spec, size, thresh=float('-inf'), skip_center=False):
+    pos = []
+    h, w = spec.shape[:2]
+    i = 0
+    while i < h - size:
+        j = 0
+        while j < w - size:
+            p = np.argmax(spec[i: i + size, j:j + size])
+            p = (i + p // size, j + p % size)
+            if spec[p] > thresh:
+                if p != (h // 2, w // 2) or not skip_center:
+                    pos.append(p)
+            j += size
+        i += size
+
+    return pos
+
+
+def calc_rot(img):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    fft = np.fft.fft2(img)
+    fft_shift = np.fft.fftshift(fft)
+
+    mag = 20 * np.log(np.abs(fft_shift))
+
+    pos = local_max(mag, 15, skip_center=True)
+    p = sorted([(p, mag[p]) for p in pos], key=lambda x: x[1], reverse=True)[0][0]
+
+    h, w = mag.shape[:2]
+    rot = np.arctan2(p[0] - h//2, p[1] - w//2)
+    rot = np.degrees(rot) % 90
+
+    return rot
+
+
+def deskew(img):
+    rot = calc_rot(img)
+    img = imutils.rotate_bound(img, -rot)
+
+    return img
+
+
+from scipy.signal import convolve2d
+
+
+def motion_blur(img, kernel, noise=None):
+
+    if len(img.shape) == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    out = convolve2d(img, kernel, mode='valid')
+
+    if noise is not None:
+        noise = np.random.normal(0, noise, out.shape)
+        out += noise
+
+    out = np.clip(out, 0, 255).astype('uint8')
+    out = cv2.cvtColor(out, cv2.COLOR_GRAY2BGR)
+
+    return out
+
+
+def wiener_filter(img, kernel=None):
+
+    if len(img.shape) == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    if kernel is None:
+        kernel = np.eye(3) / 3
+    g = np.fft.fft2(img)
+    h = np.fft.fft2(kernel, s=img.shape)
+
+    f_ = g / (h * (1 + 0.002/np.abs(h) ** 2))
+    f = np.abs(np.fft.ifft2(f_))
+
+    rec = cv2.cvtColor(f.astype('uint8'), cv2.COLOR_GRAY2BGR)
+
+    return rec
+
+
+def get_psf(size, theta):
+
+    h = np.zeros([max(size) * 2] * 2, dtype='float32')
+    h = cv2.ellipse(h,
+                    (h.shape[1] // 2, h.shape[0] // 2),
+                    size,
+                    90 - theta,
+                    0, 360,
+                    255, -1)
+    h /= np.sum(h)
+    return h
+
+
+def wiener(h, nsr, shape):
+    h_fft = np.fft.fft2(h, s=shape)
+    HW = np.conj(h_fft) / (np.abs(h_fft) ** 2 + nsr)
+
+    return HW
+
+
+def deblur(img, kernel, nsr):
+    if len(img.shape) == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    HW = wiener(kernel, nsr, img.shape)
+    G = np.fft.fft2(img)
+    F = G * HW
+    rec = np.abs(np.fft.ifft2(F))
+    return cv2.cvtColor(rec.astype('uint8'), cv2.COLOR_GRAY2BGR)
+
+
+def check_blur(img, size=60, thresh=None):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    h, w = img.shape[:2]
+    cx, cy = int(w/2), int(h/2)
+
+    fft = np.fft.fft2(img)
+    fft_shift = np.fft.fftshift(fft)
+
+    # for visualization
+    # mag = 20 * np.log(np.abs(fft_shift))
+
+    fft_shift[cy - size: cy + size, cx - size:cx + size] = 0
+    fft_rec = np.fft.ifftshift(fft_shift)
+    rec = np.fft.ifft2(fft_rec)
+
+    mag = 20 * np.log(np.abs(rec))
+    mean = np.mean(mag)
+
+    if thresh is None:
+        return mean
+    else:
+        return mean < thresh
+
+
+def edge_taper(img, gamma, beta):
+    if len(img.shape) == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    h, w = img.shape
+    w1 = np.zeros((w,), dtype='float32')
+    w2 = np.zeros((h,), dtype='float32')
+
+    dx = 2 * 3.14 / w
+    x = -3.14
+    for i in range(w):
+        w1[i] = 0.5 * (np.tanh((x + gamma/2) / beta) - (np.tanh((x - gamma/2) / beta)))
+        x += dx
+
+    dy = 2 * 3.14 / h
+    y = -3.14
+    for i in range(h):
+        w2[i] = 0.5 * (np.tanh((y + gamma/2) / beta) - (np.tanh((y - gamma/2) / beta)))
+        y += dy
+
+    w1 = w1.reshape(1, w)
+    w2 = w2.reshape(h, 1)
+
+    img = img * np.matmul(w2, w1)
+
+    return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+
+
+def fix_blur(img):
+
+    if not check_blur(img, thresh=15):
+        info('Image is not blurry.')
+        return img
+    elif query('Image seems to be blurry. Continue?'):
+        warn('Skipping blurry image. This might affect accuracy.')
+        return img
+
+    # TODO fix blur here
+    kernel = get_psf((1, 6), 0)
+    # img = edge_taper(img, 5, 0.2)
+    rec = deblur(img, kernel, 0.05)
+    return rec
+
+
 if __name__ == '__main__':
-    path = '/media/tran/003D94E1B568C6D11/Workingspace/handwritten_text_recognition/1.jpg'
+    path = '/media/tran/003D94E1B568C6D11/Workingspace/handwritten_text_recognition/3.jpeg'
     img  = cv2.imread(path)
 
-    pts = get_corners(img)
-    img = align(img, pts)
-    img = clean(img, BGR=True)
+    # img = motion_blur(img, kernel, noise=3)
 
-    import matplotlib.pyplot as plt
+    img = fix_blur(img)
 
-    plt.imshow(img[:, :, ::-1])
-    plt.show()
+    # corners = get_corners(img)
+    # img = align(img, corners)
+    #
+    # img = clean(img, BGR=True)
+    # img = deskew(img)
+
+    plt.figure(figsize=(20, 20)); plt.imshow(img[:, :, ::-1] if len(img.shape) == 3 else img); plt.show()
+
+
+
+
 
