@@ -3,19 +3,13 @@ import cv2
 import imutils
 from tqdm import tqdm
 
+import tkinter as tk
+from tkinter import ttk
+
 import matplotlib.pyplot as plt
 
+from generals import *
 
-def query(msg):
-    return not bool(input('[QUERY] ' + msg + ' [<ENTER> for yes] ').strip())
-
-
-def info(msg):
-    print('[INFO] ' + msg)
-
-
-def warn(msg):
-    print('[WARNING] ' + msg)
 
 def binary_segment(img):
 
@@ -66,11 +60,6 @@ def detect_corner(img):
         return None
 
     return pts
-
-    # demo = cv2.cvtColor((labels == k).astype('uint8') * 255, cv2.COLOR_GRAY2BGR)
-    # cv2.drawContours(demo, [pts.astype('int32')], -1, color=(0, 255, 0))
-    #
-    # return demo
 
 
 def select_corners():
@@ -271,24 +260,6 @@ def motion_blur(img, kernel, noise=None):
     return out
 
 
-def wiener_filter(img, kernel=None):
-
-    if len(img.shape) == 3:
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    if kernel is None:
-        kernel = np.eye(3) / 3
-    g = np.fft.fft2(img)
-    h = np.fft.fft2(kernel, s=img.shape)
-
-    f_ = g / (h * (1 + 0.002/np.abs(h) ** 2))
-    f = np.abs(np.fft.ifft2(f_))
-
-    rec = cv2.cvtColor(f.astype('uint8'), cv2.COLOR_GRAY2BGR)
-
-    return rec
-
-
 def get_psf(size, theta):
 
     h = np.zeros([max(size) * 2] * 2, dtype='float32')
@@ -299,6 +270,7 @@ def get_psf(size, theta):
                     0, 360,
                     255, -1)
     h /= np.sum(h)
+
     return h
 
 
@@ -372,7 +344,6 @@ def edge_taper(img, gamma, beta):
     return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
 
-
 def fix_blur(img):
 
     if not check_blur(img, thresh=15):
@@ -382,30 +353,121 @@ def fix_blur(img):
         warn('Skipping blurry image. This might affect accuracy.')
         return img
 
-    # TODO fix blur here
-    kernel = get_psf((1, 6), 0)
-    # img = edge_taper(img, 5, 0.2)
-    rec = deblur(img, kernel, 0.05)
+    kernel, nsr = select_deblur_coef(img)
+    # img = edge_taper(img, 10, 0.2)
+    rec = deblur(img, kernel, nsr)
     return rec
 
 
+def select_deblur_coef(img):
+    root = tk.Tk()
+    root.title('Select deblur co-efficients')
+    root.geometry('400x540+50+50')
+
+    root.columnconfigure(0, weight=1)
+    root.columnconfigure(1, weight=3)
+
+    def get_tk_img(photo):
+        mag = min(550 / photo.shape[0], 1)
+        h, w = int(mag * photo.shape[0]), int(mag * photo.shape[1])
+        photo = cv2.resize(photo, (w, h))
+        photo = cv2.cvtColor(photo, cv2.COLOR_BGR2RGB)
+        data = f'P6 {w} {h} 255 '.encode() + photo.tobytes()
+        return tk.PhotoImage(width=w, height=h, data=data, format='PPM')
+
+    def img_change():
+        kernel = get_psf((y.get(), x.get()), angle.get())
+        img2 = deblur(img, kernel, 2 ** nsr_log2.get())
+        img_tk = get_tk_img(img2)
+        img_label.configure(image=img_tk)
+        img_label.image = img_tk
+
+    img_tk = get_tk_img(img)
+
+    img_label = ttk.Label(root, image=img_tk)
+    img_label.grid(column=0, row=0, columnspan=2, padx=5, pady=5)
+
+    angle = tk.DoubleVar(value=0)
+
+    def angle_value():
+        return 'angle: %.2f degree' % (angle.get())
+
+    def angle_change(event):
+        angle_label.config(text=angle_value())
+        img_change()
+
+
+    angle_label = ttk.Label(root, text=angle_value())
+    angle_label.grid(column=0, row=1, sticky='w', padx=5, pady=5)
+    angle_slider = ttk.Scale(root, from_=-90, to=90, orient='horizontal', variable=angle, command=angle_change)
+    angle_slider.grid(column=1, row=1, sticky='we', padx=5, pady=5)
+
+    x = tk.IntVar(value=1)
+
+    def x_value():
+        return 'x: %d pixels' % (x.get())
+
+    def x_change(event):
+        x_label.config(text=x_value())
+        img_change()
+
+    x_label = ttk.Label(root, text=x_value())
+    x_label.grid(column=0, row=2, sticky='w', padx=5, pady=5)
+    x_slider = ttk.Scale(root, from_=1, to=20, orient='horizontal', variable=x, command=x_change)
+    x_slider.grid(column=1, row=2, sticky='we', padx=5, pady=5)
+
+    y = tk.IntVar(value=1)
+
+    def y_value():
+        return 'y: %d pixels' % (y.get())
+
+    def y_change(event):
+        y_label.config(text=y_value())
+        img_change()
+
+    y_label = ttk.Label(root, text=y_value())
+    y_label.grid(column=0, row=3, sticky='w', padx=5, pady=5)
+    y_slider = ttk.Scale(root, from_=1, to=20, orient='horizontal', variable=y, command=y_change)
+    y_slider.grid(column=1, row=3, sticky='we', padx=5, pady=5)
+
+    nsr_log2 = tk.DoubleVar(value=-9.9)
+
+    def nsr_value():
+        return 'nsr: %.3f' % (2 ** nsr_log2.get())
+
+    def nsr_change(event):
+        nsr_label.config(text=nsr_value())
+        img_change()
+
+    nsr_label = ttk.Label(root, text=nsr_value())
+    nsr_label.grid(column=0, row=4, sticky='w', padx=5, pady=5)
+    nsr_slider = ttk.Scale(root, from_=-10, to=0, orient='horizontal', variable=nsr_log2, command=nsr_change)
+    nsr_slider.grid(column=1, row=4, sticky='we', padx=5, pady=5)
+
+    root.mainloop()
+
+    return get_psf((y.get(), x.get()), angle.get()), 2 ** nsr_log2.get()
+
+
+
 if __name__ == '__main__':
-    path = '/media/tran/003D94E1B568C6D11/Workingspace/handwritten_text_recognition/8.jpg'
+    path = '/media/tran/003D94E1B568C6D11/Workingspace/handwritten_text_recognition/images/3.jpeg'
     img  = cv2.imread(path)
 
+    # kernel = get_psf((2, 10), 30)
     # img = motion_blur(img, kernel, noise=3)
 
     img = fix_blur(img)
 
+
     # corners = get_corners(img)
     # img = align(img, corners)
 
-    img = clean(img, BGR=True)
-    img = deskew(img)
+    # img = clean(img, BGR=True)
+    # img = deskew(img)
+
+    # select_deblur_coef(img)
+    # img = deblur(img, kernel, 0.02)
 
     plt.figure(figsize=(20, 20)); plt.imshow(img[:, :, ::-1] if len(img.shape) == 3 else img); plt.show()
-
-
-
-
 

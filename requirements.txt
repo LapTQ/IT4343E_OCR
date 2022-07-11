@@ -5,3 +5,7 @@ opencv-contrib-python~=4.5.4.60
 tqdm~=4.64.0
 imutils~=0.5.4
 scipy~=1.8.1
+tensorflow>=2.8.0
+jiwer
+torch>=1.11.0
+torchvision>=0.12.0
