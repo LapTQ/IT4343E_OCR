@@ -5,6 +5,8 @@ from pathlib import Path
 import json
 import os
 
+from im_utils import *
+
 H_AXIS = -3
 W_AXIS = -2
 C_AXIS = -1
@@ -23,29 +25,17 @@ NUM_TO_CHAR = keras.layers.StringLookup(
     invert=True
 )
 
-def load_img(path):
-    img_string = tf.io.read_file(path)
-    img = tf.image.decode_png(img_string, channels=3)
-    return img
-
 def process_img_and_label(
         img,
         label,
         target_size,
-        # grayscale,
-        # invert_color,
         time_steps
 ):
 
     target_height, target_width = target_size
     H, W = target_height, int(tf.shape(img)[W_AXIS] * target_height / tf.shape(img)[H_AXIS])
     img = tf.image.resize(img, (H, W))
-    # img = np.pad(img, ((0, 0), (0, target_width - W), (0, 0)), mode='median')
     img = tf.pad(img, ((0, 0), (0, target_width - W), (0, 0)), mode='CONSTANT', constant_values=255)
-    # if grayscale:
-    #     img = tf.image.rgb_to_grayscale(img)
-    # if invert_color:
-    #     img = 255. - img
 
     y_true = tf.strings.unicode_split(label, input_encoding='UTF-8')
     y_true = CHAR_TO_NUM(y_true)
@@ -59,18 +49,18 @@ def get_tf_dataset(
         img_dir,
         label_path,
         target_size,
-        # grayscale,
-        # invert_color,
         time_steps,
         batch_size=None,
         shuffle=False,
         cache=False
 ):
 
-    # load annotation file: {img_name: label}
+    # dataset = {img_name: label}
     dataset = json.load(open(label_path, 'r'))
+
     # dataset = {img_path: label}`
     dataset = {os.path.join(img_dir, img_name): label for img_name, label in dataset.items()}
+
     dataset = tf.data.Dataset.from_tensor_slices((dataset.keys(), dataset.values()))
 
     # dataset = [(img_array, label_string),...]
@@ -79,8 +69,6 @@ def get_tf_dataset(
         x,
         y,
         target_size,
-        # grayscale,
-        # invert_color,
         time_steps), num_parallel_calls=tf.data.AUTOTUNE)
 
     dataset = dataset.prefetch(buffer_size=500)
@@ -91,27 +79,6 @@ def get_tf_dataset(
     return dataset
 
 
-# def dilate_img(img):
-#     """
-#     Grow a single image.
-#     :param img: numpy array of shape (H, W, C)
-#     :return: numpy array of shape (H, W, C)
-#     """
-#
-#     kernel = tf.ones((3, 3, img.shape[-1]), dtype=img.dtype)
-#     # tf.nn.dilation2d works with batch of images, not a single image
-#     img = tf.nn.dilation2d(
-#         tf.expand_dims(img, axis=0),
-#         filters=kernel,
-#         strides=(1, 1, 1, 1),
-#         padding='SAME',
-#         data_format='NHWC',
-#         dilations=(1, 1, 1, 1)
-#     )[0]
-#     img = img - tf.ones_like(img)
-#     return img
-#
-#
 # class AddressDataset(keras.utils.Sequence):
 #     """Iterate over the data as Numpy array.
 #     Reference: https://keras.io/examples/vision/oxford_pets_image_segmentation/

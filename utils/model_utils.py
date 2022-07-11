@@ -1,9 +1,21 @@
 import tensorflow as tf
 from tensorflow import keras
 from jiwer import wer
-from .generals import decode_batch_predictions
-from .datasets import *
+from data_utils import *
 import numpy as np
+
+
+def decode_batch(pred):
+    input_len = np.ones(pred.shape[0]) * pred.shape[1]
+    # Use beam search
+    results = keras.backend.ctc_decode(pred, input_length=input_len, greedy=False)[0][0]
+    # Iterate over the results and get back the text
+    output_text = []
+    for result in results:
+        result = tf.strings.reduce_join(NUM_TO_CHAR(result)).numpy().decode("utf-8")
+        output_text.append(result)
+    return output_text
+
 
 class CallbackEval(keras.callbacks.Callback):
     def __init__(self, dataset):
@@ -15,7 +27,7 @@ class CallbackEval(keras.callbacks.Callback):
         targets = []
         for batch in self.dataset:
             y_pred = self.model.predict(batch)
-            y_pred = decode_batch_predictions(y_pred)
+            y_pred = decode_batch(y_pred)
             predictions.extend(y_pred)
             for label in batch['y_true']:
                 label = tf.strings.reduce_join(NUM_TO_CHAR(label)).numpy().decode('utf-8')

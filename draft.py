@@ -2,22 +2,29 @@ import tensorflow as tf
 from tensorflow import keras
 
 from models.crnn import *
-from utils.datasets import *
+from utils.data_utils import *
 import numpy as np
 from utils.generals import *
-from utils.preprocessing import *
 import matplotlib.pyplot as plt
-from tensorflow import keras
 import json
 
+import cv2
 
-# base_model = get_base_model((118, 2202, 3), 214, grayscale=True, invert_color=True, input_normalized=False)
-# model = get_CTC_model(base_model)
+img = cv2.imread('data/data_samples_1/1.jpg')
+img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
+img = cv2.resize(img, (1000, 118))
+
+img = np.expand_dims(img, axis=0)
+
+base_model = get_base_model(118, 214)
+model = get_CTC_model(base_model)
 # input = base_model.input
 # output = base_model.get_layer('rgb2_gray').output
 # print([layer.name for layer in base_model.layers])
 # model = keras.Model(inputs=input, outputs=output)
-# print(model.summary())
+print(model.summary())
 #
 # time_steps = base_model.output.shape[1]
 #
@@ -71,6 +78,8 @@ import json
 # # plt.imshow(tf.cast(img, tf.uint8))
 # # plt.show()
 
+# out = base_model.predict(img)
+# print(out.shape)
 
 
 

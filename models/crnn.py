@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow import keras
-from utils.preprocessing import *
 
 class CTCLayer(keras.layers.Layer):
     def __init__(self, **kwargs):
@@ -13,13 +12,12 @@ class CTCLayer(keras.layers.Layer):
         return y_pred
 
 
-def get_base_model(input_shape, vocab_size, grayscale, invert_color, input_normalized):
-    input_ = keras.layers.Input(shape=input_shape, name='input_img')
+def get_base_model(height, vocab_size):
+    input_ = keras.layers.Input(shape=(height, None, 3), name='input_img')
 
-    x = keras.layers.Rescaling(1/255.)(input_) if not input_normalized else input_
-    if grayscale:
-        x = RGB2Gray(invert_color=invert_color, input_normalized=True)(x)
+    x = keras.layers.Rescaling(1/255., name='rescale')(input_)
 
+    # TODO thay doi kien truc -> mobilenet
     x = keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu', name='conv_1')(x)
     x = keras.layers.MaxPooling2D((3, 3), strides=3, name='max_1')(x)
     x = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu', name='conv_2')(x)
@@ -46,9 +44,13 @@ def get_base_model(input_shape, vocab_size, grayscale, invert_color, input_norma
     x = keras.layers.MaxPooling2D((3, 1), strides=(3, 1), name='max_3')(x)
     x = keras.layers.MaxPooling2D((3, 1), strides=(3, 1), name='max_4')(x)
 
-    x = keras.layers.Reshape((x.shape[-2], x.shape[-1]), name='reshape')(x)
+    x = keras.layers.Reshape((-1, x.shape[-1]), name='reshape')(x)
+
+    # TODO check
     # x = keras.layers.Permute((2, 1, 3))(x)
     # x = keras.layers.Reshape((-1, x.shape[-2] * x.shape[-1]))(x)
+
+    # TODO attention layer
 
     x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2, name='lstm_1'), name='bdr_1')(x)
     x = keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=True, dropout=0.2, name='lstm_2'), name='bdr_2')(x)
