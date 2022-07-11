@@ -5,7 +5,6 @@ from pathlib import Path
 import json
 import os
 
-from im_utils import *
 
 H_AXIS = -3
 W_AXIS = -2
@@ -24,6 +23,13 @@ NUM_TO_CHAR = keras.layers.StringLookup(
     oov_token="",
     invert=True
 )
+
+
+def load_img(path):
+    img_string = tf.io.read_file(path)
+    img = tf.image.decode_png(img_string, channels=3)
+    return img
+
 
 def process_img_and_label(
         img,

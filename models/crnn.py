@@ -1,5 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
+import tensorflow_addons as tfa
+
 
 class CTCLayer(keras.layers.Layer):
     def __init__(self, **kwargs):
@@ -18,29 +20,31 @@ def get_base_model(height, vocab_size):
     x = keras.layers.Rescaling(1/255., name='rescale')(input_)
 
     # TODO thay doi kien truc -> mobilenet
-    x = keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu', name='conv_1')(x)
+    x = keras.layers.Conv2D(64, (3, 3), padding='same', name='conv_1')(x)
+    x = tfa.activations.mish(x)
     x = keras.layers.MaxPooling2D((3, 3), strides=3, name='max_1')(x)
-    x = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu', name='conv_2')(x)
+    x = keras.layers.Conv2D(128, (3, 3), padding='same', name='conv_2')(x)
+    x = tfa.activations.mish(x)
     x = keras.layers.MaxPooling2D((3, 3), strides=3, name='max_2')(x)
     x = keras.layers.Conv2D(256, (3, 3), padding='same', name='conv3_3')(x)
     x = keras.layers.BatchNormalization(name='bn_1')(x)
-    x = keras.layers.ReLU()(x)
+    x = tfa.activations.mish(x)
     x_shortcut = x
     x = keras.layers.Conv2D(256, (3, 3), padding='same', name='conv_4')(x)
     x = keras.layers.BatchNormalization(name='bn_2')(x)
     x = keras.layers.Add(name='add_1')([x, x_shortcut])
-    x = keras.layers.ReLU()(x)
+    x = tfa.activations.mish(x)
     x = keras.layers.Conv2D(512, (3, 3), padding='same', name='conv_5')(x)
     x = keras.layers.BatchNormalization(name='bn_3')(x)
-    x = keras.layers.ReLU()(x)
+    x = tfa.activations.mish(x)
     x_shortcut = x
     x = keras.layers.Conv2D(512, (3, 3), padding='same', name='conv_6')(x)
     x = keras.layers.BatchNormalization(name='bn_4')(x)
     x = keras.layers.Add(name='add_2')([x, x_shortcut])
-    x = keras.layers.ReLU()(x)
+    x = tfa.activations.mish(x)
     x = keras.layers.Conv2D(1024, (3, 3), padding='same', name='conv_7')(x)
     x = keras.layers.BatchNormalization(name='bn_5')(x)
-    x = keras.layers.ReLU()(x)
+    x = tfa.activations.mish(x)
     x = keras.layers.MaxPooling2D((3, 1), strides=(3, 1), name='max_3')(x)
     x = keras.layers.MaxPooling2D((3, 1), strides=(3, 1), name='max_4')(x)
 

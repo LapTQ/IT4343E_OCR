@@ -11,12 +11,6 @@ import matplotlib.pyplot as plt
 from generals import *
 
 
-def load_img(path):
-    img_string = tf.io.read_file(path)
-    img = tf.image.decode_png(img_string, channels=3)
-    return img
-
-
 def binary_segment(img):
 
     H, W = img.shape[:2]

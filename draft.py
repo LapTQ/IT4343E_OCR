@@ -19,12 +19,8 @@ img = cv2.resize(img, (1000, 118))
 img = np.expand_dims(img, axis=0)
 
 base_model = get_base_model(118, 214)
-model = get_CTC_model(base_model)
-# input = base_model.input
-# output = base_model.get_layer('rgb2_gray').output
-# print([layer.name for layer in base_model.layers])
-# model = keras.Model(inputs=input, outputs=output)
-print(model.summary())
+# model = get_CTC_model(base_model)
+print(base_model.summary())
 #
 # time_steps = base_model.output.shape[1]
 #
