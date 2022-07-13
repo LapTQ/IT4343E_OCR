@@ -14,11 +14,11 @@ def parse_opt():
 
     ap.add_argument('--pretrained', default=None, type=str)
     ap.add_argument('--epochs', default=100, type=int)
-    ap.add_argument('--batch_size', default=32, type=int)
+    ap.add_argument('--batch_size', default=8, type=int)
     ap.add_argument('--train_data', default='data/data_samples_2', type=str)
     ap.add_argument('--val_data', default='data/private_test', type=str)
     ap.add_argument('--lr', default=1e-3, type=float)
-    ap.add_argument('--reduce_lr_patience', default=4, type=int)
+    ap.add_argument('--reduce_lr_patience', default=3, type=int)
     ap.add_argument('--early_stop_patience', default=10, type=int)
     ap.add_argument('--target_height', default=118, type=int)
     ap.add_argument('--target_width', default=2202, type=int)
@@ -30,11 +30,13 @@ def parse_opt():
     return opt
 
 
-def run(opt):
+def main(opt):
+
+    info('GPU: ' + str(tf.config.list_physical_devices('GPU')))
 
     if opt['pretrained'] is not None:
         info(f"Loading pretrained model at {opt['pretrained']} ...")
-        base_model = keras.models.load_model(opt['pretrained'])
+        base_model = keras.models.load_model(opt['pretrained']).get_layer('crnn')
         info('Done')
 
         opt['target_height'] = base_model.input.shape[1]
@@ -83,6 +85,7 @@ def run(opt):
         keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=opt['reduce_lr_patience'], verbose=1),
         keras.callbacks.EarlyStopping(monitor='val_loss', patience=opt['early_stop_patience'], verbose=1, restore_best_weights=True),
         keras.callbacks.ModelCheckpoint(filepath='saved_models/crnn', save_best_only=True),
+        # TODO custom metric
         CallbackEval(val_dt)
     ]
 
@@ -107,11 +110,11 @@ if __name__ == '__main__':
 
     opt = parse_opt()
 
-    print('[LOG] Config are set:')
+    info('Arguments are set:')
     for k, v in opt.items():
         print(f'{k:24}: {v}')
 
-    run(opt)
+    main(opt)
 
 
 

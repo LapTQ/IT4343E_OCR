@@ -14,11 +14,11 @@ img = cv2.imread('data/data_samples_1/1.jpg')
 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
-img = cv2.resize(img, (1000, 118))
+img = cv2.resize(img, (2022, 96))
 
 img = np.expand_dims(img, axis=0)
 
-base_model = get_base_model(118, 214)
+base_model = get_base_model2(96, 214)
 # model = get_CTC_model(base_model)
 print(base_model.summary())
 #
@@ -74,8 +74,12 @@ print(base_model.summary())
 # # plt.imshow(tf.cast(img, tf.uint8))
 # # plt.show()
 
-# out = base_model.predict(img)
-# print(out.shape)
+
+
+# model = get_CTC_model(base_model)
+print(base_model.predict(img).shape)
+
+
 
 
 
