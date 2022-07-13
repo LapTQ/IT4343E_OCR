@@ -20,8 +20,8 @@ def parse_opt():
     ap.add_argument('--lr', default=1e-3, type=float)
     ap.add_argument('--reduce_lr_patience', default=3, type=int)
     ap.add_argument('--early_stop_patience', default=10, type=int)
-    ap.add_argument('--target_height', default=118, type=int)
-    ap.add_argument('--target_width', default=2202, type=int)
+    ap.add_argument('--target_height', default=96, type=int)
+    ap.add_argument('--target_width', default=2048, type=int)
     ap.add_argument('--shuffle', default=True, type=bool)
     ap.add_argument('--cache', default=True, type=bool)
 

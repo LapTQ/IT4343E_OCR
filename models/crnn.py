@@ -20,7 +20,7 @@ class CTCLayer(keras.layers.Layer):
         return y_pred
 
 
-def get_base_model(height, vocab_size):
+def get_base_model2(height, vocab_size):
     input_ = keras.layers.Input(shape=(height, None, 3), name='input_img')
 
     x = keras.layers.Rescaling(1/255., name='rescale')(input_)
@@ -178,7 +178,7 @@ def _se_block(input_, in_channels, se_ratio, block_id):
 
     return x
 
-def get_base_model2(height, vocab_size):
+def get_base_model(height, vocab_size):
     input_ = keras.layers.Input(shape=(height, None, 3), name='input_img')
 
     x = keras.layers.Rescaling(1/127.5, offset=-1, name='rescale')(input_)
