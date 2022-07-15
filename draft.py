@@ -9,35 +9,36 @@ import matplotlib.pyplot as plt
 import json
 
 import cv2
+#
+# img = cv2.imread('data/data_samples_1/1.jpg')
+# img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+# img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+#
+# img = cv2.resize(img, (2048, 96))
 
-img = cv2.imread('data/data_samples_1/1.jpg')
-img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+# img = np.expand_dims(img, axis=0)
 
-img = cv2.resize(img, (2048, 96))
-
-img = np.expand_dims(img, axis=0)
+dummy_input = np.zeros((1, 96, 2048, 3))
 
 base_model = get_base_model(96, 214)
-# model = get_CTC_model(base_model)
-print(base_model.summary())
-#
-# time_steps = base_model.output.shape[1]
-#
-# train_dataset = get_tf_dataset(
-#     img_dir='data/data_samples_2',
-#     label_path='data/data_samples_2/labels.json',
-#     target_size=(118, 2202),
-#     # grayscale=True,
-#     # invert_color=True,
-#     time_steps=time_steps,
-#     batch_size=4,
-#     # shuffle=True
-# )
-# for batch in train_dataset.take(1):
-#     pass
-#
-#
+output = base_model(dummy_input)
+time_steps = output.shape[1]
+model = get_CTC_model(base_model)
+# print(base_model.summary())
+
+
+train_dataset = get_tf_dataset(
+    img_dir='data/data_samples_1',
+    label_path='data/data_samples_1/labels.json',
+    target_size=(96, 2048),
+    time_steps=time_steps,
+    batch_size=4,
+)
+for batch in train_dataset.take(1):
+    pass
+
+print(batch.values())
+
 # input_img, y_true, input_length, label_length = batch.values()
 # input_img = model.predict(input_img)
 #
@@ -59,25 +60,9 @@ print(base_model.summary())
 # plt.savefig('draft.jpg')
 # plt.show()
 #
-# # img_path = 'data/data_samples_1/1.jpg'
-# # img = plt.imread(img_path)
-# # plt.imshow(img)
-# # plt.show()
-# # # h, w, c = img.shape
-# # # img = tf.image.resize(img, (118, int(w * 118/h)))
-# # # h, w, c = img.shape
-# # # img = np.pad(img, ((0, 0), (0, 2167 - w), (0, 0)), mode='median')
-# # img = Resize(118, 2167)(img)
-# # plt.imshow(tf.cast(img, tf.uint8))
-# # plt.show()
-# # img = RGB2Gray()(img)
-# # plt.imshow(tf.cast(img, tf.uint8))
-# # plt.show()
 
 
-
-# model = get_CTC_model(base_model)
-print(base_model.predict(img).shape)
+print(output.shape)
 
 
 

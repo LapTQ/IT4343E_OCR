@@ -48,11 +48,13 @@ def main(opt):
             )
         info('Done')
 
-    # given input shape (N, 118, 2202, 3), the output the
-    # base_model will be (N, 244, vocab_size + 1).
+    # given input shape (N, 96, 2048, 3), the output the
+    # base_model will be (N, 256, vocab_size + 1).
     # so time_steps will be dim 1
     dummy_input = np.zeros((1, opt['target_height'], opt['target_width'], 3))
     time_steps = base_model(dummy_input).shape[1]
+
+    print(time_steps)
 
     model = get_CTC_model(base_model)
     print(model.summary())
@@ -78,7 +80,7 @@ def main(opt):
     )
 
     model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=opt['lr']),
+        optimizer=keras.optimizers.SGD(learning_rate=opt['lr'], momentum=0.9, nesterov=True),
     )
 
     callbacks = [
