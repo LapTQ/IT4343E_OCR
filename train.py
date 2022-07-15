@@ -86,7 +86,7 @@ def main(opt):
     callbacks = [
         keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=opt['reduce_lr_patience'], verbose=1),
         keras.callbacks.EarlyStopping(monitor='val_loss', patience=opt['early_stop_patience'], verbose=1, restore_best_weights=True),
-        keras.callbacks.ModelCheckpoint(filepath='saved_models/crnn', save_best_only=True),
+        keras.callbacks.ModelCheckpoint(filepath='/content/drive/MyDrive/checkpoint/crnn', save_best_only=True), # saved_models
         # TODO custom metric
         CallbackEval(val_dt)
     ]
