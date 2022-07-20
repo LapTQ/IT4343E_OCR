@@ -8,7 +8,7 @@ from tkinter import ttk
 
 import matplotlib.pyplot as plt
 
-from generals import *
+from utils.generals import *
 
 
 def binary_segment(img):
@@ -62,7 +62,7 @@ def detect_corner(img):
     return pts
 
 
-def select_corners():
+def select_corners(img):
     """
     Let user manually select corners of document.
     :return: np.array
@@ -151,7 +151,7 @@ def get_corners(img):
 
     info(f"Proposed corners are {'' if good else 'not '}good.")
     if not good:
-        pts = select_corners()
+        pts = select_corners(img)
 
     pts = arrange_corners(pts)
 
@@ -174,12 +174,8 @@ def align(img, pts):
     return img
 
 
-def clean(img, BGR):
-    assert BGR is True or BGR is False, f'Invalid argument: BGR must be True or False, got {BGR}'
-    if BGR:
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    else:
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+def auto_clean(img):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     img = img.astype(np.float32)
 
@@ -191,6 +187,72 @@ def clean(img, BGR):
     beta = 255 / thresh
 
     img = (img - alpha) * beta
+
+    img = np.clip(img, 0, 255)
+    img = img.astype(np.uint8)
+
+    return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+
+def clean(img, BGR):
+    assert BGR is True or BGR is False, f'Invalid argument: BGR must be True or False, got {BGR}'
+    if not BGR:
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = img.astype(np.float32)
+
+    val, cnt = np.unique(img, return_counts=True)
+    med = cnt[np.argmin(np.abs(cnt - int(np.median(cnt))))]
+    alpha = np.max(val[np.where(cnt == med)])
+
+    thresh = (255 * 255 + 1.2 * alpha * alpha - 255 * alpha) / (255 - (1 - 1.2) * alpha) - alpha
+    beta0 = 255 / thresh
+    img = img - alpha
+
+    root = tk.Tk()
+    root.title('Select filter level co-efficients')
+    root.geometry('400x540+50+50')
+
+    root.columnconfigure(0, weight=1)
+    root.columnconfigure(1, weight=3)
+
+    def get_tk_img(photo):
+        mag = min(550 / photo.shape[0], 1)
+        h, w = int(mag * photo.shape[0]), int(mag * photo.shape[1])
+        photo = cv2.resize(np.clip(photo, 0, 255).astype('uint8'), (w, h))
+        photo = cv2.cvtColor(photo, cv2.COLOR_GRAY2RGB)
+        data = f'P6 {w} {h} 255 '.encode() + photo.tobytes()
+        return tk.PhotoImage(width=w, height=h, data=data, format='PPM')
+
+    def img_change():
+        img2 = img * beta.get()
+        img_tk = get_tk_img(img2)
+        img_label.configure(image=img_tk)
+        img_label.image = img_tk
+
+    img_tk = get_tk_img(img * beta0)
+
+    img_label = ttk.Label(root, image=img_tk)
+    img_label.grid(column=0, row=0, columnspan=2, padx=5, pady=5)
+
+    beta = tk.DoubleVar(value=beta0)
+
+    def beta_value():
+        return 'level: %.2f' % (beta.get())
+
+    def beta_change(event):
+        beta_label.config(text=beta_value())
+        img_change()
+
+    beta_label = ttk.Label(root, text=beta_value())
+    beta_label.grid(column=0, row=1, sticky='w', padx=5, pady=5)
+    beta_slider = ttk.Scale(root, from_=1, to=10, orient='horizontal', variable=beta, command=beta_change)
+    beta_slider.grid(column=1, row=1, sticky='we', padx=5, pady=5)
+
+    root.mainloop()
+
+    img = img * beta.get()
 
     img = np.clip(img, 0, 255)
     img = img.astype(np.uint8)
@@ -235,9 +297,52 @@ def calc_rot(img):
 
 def deskew(img):
     rot = calc_rot(img)
-    img = imutils.rotate_bound(img, -rot)
+    img_rot = imutils.rotate_bound(img, -rot)
 
-    return img
+    root = tk.Tk()
+    root.title('Select deskew angle')
+    root.geometry('400x540+50+50')
+
+    root.columnconfigure(0, weight=1)
+    root.columnconfigure(1, weight=3)
+
+    def get_tk_img(photo):
+        mag = min(550 / photo.shape[0], 1)
+        h, w = int(mag * photo.shape[0]), int(mag * photo.shape[1])
+        photo = cv2.resize(photo, (w, h))
+        photo = cv2.cvtColor(photo, cv2.COLOR_BGR2RGB)
+        data = f'P6 {w} {h} 255 '.encode() + photo.tobytes()
+        return tk.PhotoImage(width=w, height=h, data=data, format='PPM')
+
+    def img_change():
+        img2 = imutils.rotate_bound(img, -angle.get())
+        img_tk = get_tk_img(img2)
+        img_label.configure(image=img_tk)
+        img_label.image = img_tk
+
+    img_tk = get_tk_img(imutils.rotate_bound(img, -rot))
+
+    img_label = ttk.Label(root, image=img_tk)
+    img_label.grid(column=0, row=0, columnspan=2, padx=5, pady=5)
+
+    angle = tk.DoubleVar(value=rot)
+
+    def angle_value():
+        return 'angle: %.2f degree' % (angle.get())
+
+    def angle_change(event):
+        angle_label.config(text=angle_value())
+        img_change()
+
+    angle_label = ttk.Label(root, text=angle_value())
+    angle_label.grid(column=0, row=1, sticky='w', padx=5, pady=5)
+    angle_slider = ttk.Scale(root, from_=-90, to=90, orient='horizontal', variable=angle, command=angle_change)
+    angle_slider.grid(column=1, row=1, sticky='we', padx=5, pady=5)
+
+    root.mainloop()
+
+    return imutils.rotate_bound(img, -angle.get())
+
 
 
 from scipy.signal import convolve2d
@@ -448,6 +553,70 @@ def select_deblur_coef(img):
 
     return get_psf((y.get(), x.get()), angle.get()), 2 ** nsr_log2.get()
 
+
+def normalizeMeanVariance(in_img, mean=(0.485, 0.456, 0.406), variance=(0.229, 0.224, 0.225)):
+    # should be RGB order
+    img = in_img.copy().astype(np.float32)
+
+    img -= np.array([mean[0] * 255.0, mean[1] * 255.0, mean[2] * 255.0], dtype=np.float32)
+    img /= np.array([variance[0] * 255.0, variance[1] * 255.0, variance[2] * 255.0], dtype=np.float32)
+    return img
+
+
+def denormalizeMeanVariance(in_img, mean=(0.485, 0.456, 0.406), variance=(0.229, 0.224, 0.225)):
+    # should be RGB order
+    img = in_img.copy()
+    img *= variance
+    img += mean
+    img *= 255.0
+    img = np.clip(img, 0, 255).astype(np.uint8)
+    return img
+
+
+def resize_aspect_ratio(img, square_size, interpolation=cv2.INTER_LINEAR, mag_ratio=1):
+    """
+    NOTE: ảnh đầu vào được resize giữ nguyên tỉ số
+    Bước 1: Kích thước cạnh được nhân (giữ nguyên tỉ lệ) lên tối đa là mag_ratio lần kích thước ban đầu, nhưng không quá 1280
+    Bước 2: Pad thêm 0 vào cạnh dưới và cạnh phải, sao cho 2 cạnh đều chia hết cho 32.
+    :param img: ảnh RGB, shape (H, W, 3)
+    :param square_size: kích thước (~ tối đa khi resize)
+    :param interpolation:
+    :param mag_ratio: nhân ảnh lên gấp bao nhiêu lần (không vượt quá cái ngưỡng square_size). Mặc định là giữ nguyên.
+    :return: ảnh mới đã resize, tỉ lệ cạnh mới/cũ, kích thước của heatmap (1/2 kích thước ảnh đã resize)
+    """
+    height, width, channel = img.shape
+
+    # magnify image size
+    target_size = mag_ratio * max(height, width)
+
+    # set original image size
+    if target_size > square_size:
+        target_size = square_size
+
+    ratio = target_size / max(height, width)
+
+    target_h, target_w = int(height * ratio), int(width * ratio)
+    proc = cv2.resize(img, (target_w, target_h), interpolation=interpolation)
+
+    # make canvas and paste image
+    target_h32, target_w32 = target_h, target_w
+    if target_h % 32 != 0:
+        target_h32 = target_h + (32 - target_h % 32)
+    if target_w % 32 != 0:
+        target_w32 = target_w + (32 - target_w % 32)
+    resized = np.zeros((target_h32, target_w32, channel), dtype=np.float32)
+    resized[0:target_h, 0:target_w, :] = proc
+    target_h, target_w = target_h32, target_w32
+
+    size_heatmap = (int(target_w / 2), int(target_h / 2))
+
+    return resized, ratio, size_heatmap
+
+
+def cvt2HeatmapImg(img):
+    img = (np.clip(img, 0, 1) * 255).astype(np.uint8)
+    img = cv2.applyColorMap(img, cv2.COLORMAP_JET)
+    return img
 
 
 if __name__ == '__main__':

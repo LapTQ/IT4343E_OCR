@@ -17,7 +17,7 @@ def parse_opt():
     ap.add_argument('--batch_size', default=8, type=int)
     ap.add_argument('--train_data', default='data/data_samples_2', type=str)
     ap.add_argument('--val_data', default='data/private_test', type=str)
-    ap.add_argument('--lr', default=1e-3, type=float)
+    ap.add_argument('--lr', default=1e-5, type=float)
     ap.add_argument('--reduce_lr_patience', default=3, type=int)
     ap.add_argument('--early_stop_patience', default=10, type=int)
     ap.add_argument('--target_height', default=96, type=int)
@@ -86,7 +86,7 @@ def main(opt):
     callbacks = [
         keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=opt['reduce_lr_patience'], verbose=1),
         keras.callbacks.EarlyStopping(monitor='val_loss', patience=opt['early_stop_patience'], verbose=1, restore_best_weights=True),
-        keras.callbacks.ModelCheckpoint(filepath='/content/drive/MyDrive/checkpoint/crnn', save_best_only=True), # saved_models
+        keras.callbacks.ModelCheckpoint(filepath='/content/drive/MyDrive/checkpoint/crnn', save_best_only=True, verbose=1), # saved_models
         # TODO custom metric
         CallbackEval(val_dt)
     ]

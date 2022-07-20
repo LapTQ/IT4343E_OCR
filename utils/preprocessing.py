@@ -39,7 +39,8 @@ class Resize(base_layer.Layer):
         return config
 
     def call(self, inputs):
-        H, W = self.height, int(inputs.shape[W_AXIS] * self.height / inputs.shape[H_AXIS])
+        input_shape = tf.TensorShape(inputs).as_list()
+        H, W = self.height, int(input_shape[W_AXIS] * self.height / input_shape[H_AXIS])
         outputs = tf.image.resize(inputs, (H, W))
         pad_num = self.width - W if self.width else 0
         outputs = tf.pad(outputs, ((0, 0), (0, pad_num), (0, 0)))

@@ -1,5 +1,5 @@
 numpy>=1.18.5
-# matplotlib~=3.5.2
+matplotlib>=3.2.2
 opencv-python~=4.5.4.60
 opencv-contrib-python~=4.5.4.60
 tqdm~=4.64.0
@@ -10,3 +10,13 @@ jiwer
 torch>=1.11.0
 torchvision>=0.12.0
 tensorflow_addons>=0.17.1
+Pillow>=7.0.0
+PyYAML>=5.3.1
+tqdm>=4.41.0
+pandas>=1.1.4
+seaborn>=0.11.0
+scikit-learn>=0.19.2
+pytorch-lightning >= 1.5.10
+torchmetrics~=0.8.2
+torchinfo~=1.5.4
+vietocr~=0.3.8

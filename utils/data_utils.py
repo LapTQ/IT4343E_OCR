@@ -37,11 +37,12 @@ def process_img_and_label(
         target_size,
         time_steps
 ):
+    img = 255 - img
 
     target_height, target_width = target_size
     H, W = target_height, int(tf.shape(img)[W_AXIS] * target_height / tf.shape(img)[H_AXIS])
     img = tf.image.resize(img, (H, W))
-    img = tf.pad(img, ((0, 0), (0, target_width - W), (0, 0)), mode='CONSTANT', constant_values=255)
+    img = tf.pad(img, ((0, 0), (0, target_width - W), (0, 0)), mode='CONSTANT', constant_values=0)
 
     y_true = tf.strings.unicode_split(label, input_encoding='UTF-8')
     y_true = CHAR_TO_NUM(y_true)
