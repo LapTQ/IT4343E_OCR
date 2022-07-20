@@ -22,7 +22,7 @@ python3 run.py --input path/to/image --output path/to/folder
 
 Arguments:
 * `--input`: path to an image.
-* `--output`: path to a directory where the output is stored (default to [`output`](output) if user does not specify). 
+* `--output`: path to a directory where the output is stored (default to [output](output) if user does not specify). 
 
 The output includes a `.json` file and a demo image (for visualization purpose). In addition, we save intermediate result in the [cache](cache) folder for convenience.
 
