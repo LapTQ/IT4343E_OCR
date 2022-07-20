@@ -20,8 +20,8 @@ model = get_CTC_model(base_model)
 
 
 train_dataset = get_tf_dataset(
-    img_dir='data/data_samples_1',
-    label_path='data/data_samples_1/labels.json',
+    img_dir='../data/data_samples_1',
+    label_path='../data/data_samples_1/labels.json',
     target_size=(96, 2048),
     time_steps=time_steps,
     batch_size=4,
