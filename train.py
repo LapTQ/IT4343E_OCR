@@ -1,7 +1,6 @@
 import argparse
-from models.crnn import *
+from basenet.crnn import *
 from utils.generals import *
-from utils.data_utils import *
 from utils.model_utils import *
 import tensorflow as tf
 from tensorflow import keras

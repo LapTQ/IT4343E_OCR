@@ -1,14 +1,6 @@
-import tensorflow as tf
-from tensorflow import keras
-
-from models.crnn import *
-from utils.data_utils import *
-import numpy as np
+from basenet.crnn import *
 from utils.generals import *
-import matplotlib.pyplot as plt
-import json
 
-import cv2
 #
 # img = cv2.imread('data/data_samples_1/1.jpg')
 # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
