@@ -620,23 +620,47 @@ def cvt2HeatmapImg(img):
 
 
 if __name__ == '__main__':
-    path = '/media/tran/003D94E1B568C6D11/Workingspace/handwritten_text_recognition/images/3.jpeg'
-    img  = cv2.imread(path)
+    path = '/media/tran/003D94E1B568C6D11/Workingspace/handwritten_text_recognition/input/007.jpg'
+    img0  = cv2.imread(path)
 
-    # kernel = get_psf((2, 10), 30)
-    # img = motion_blur(img, kernel, noise=3)
+    img = cv2.cvtColor(img0, cv2.COLOR_BGR2GRAY)
+    img = img.astype(np.float32)
 
-    img = fix_blur(img)
+    val, cnt = np.unique(img, return_counts=True)
+    med = cnt[np.argmin(np.abs(cnt - int(np.median(cnt))))]
+    alpha = np.max(val[np.where(cnt == med)])
+
+    plt.figure(figsize=(10, 15))
+
+    plt.subplot(3, 1, 1)
+    plt.hist(img.ravel(), bins=int(np.max(img) - np.min(img)), range=[np.min(img), np.max(img)])
+    plt.plot([alpha, alpha], plt.ylim())
+    plt.xlim([-600, 600])
+
+    thresh = (255 * 255 + 1.2 * alpha * alpha - 255 * alpha) / (255 - (1 - 1.2) * alpha) - alpha
+    beta = 255 / thresh
+    img = img - alpha
+    plt.subplot(3, 1, 2)
+    plt.hist(img.ravel(), bins=int(np.max(img) - np.min(img)), range=[np.min(img), np.max(img)])
+    plt.plot([thresh, thresh], plt.ylim(), color='lightgreen')
+    plt.xlim([-600, 600])
 
 
-    # corners = get_corners(img)
-    # img = align(img, corners)
+    img = img * beta
 
-    # img = clean(img, BGR=True)
-    # img = deskew(img)
+    plt.subplot(3, 1, 3)
+    plt.hist(img.ravel(), bins=int(np.max(img) - np.min(img)), range=[np.min(img), np.max(img)])
+    plt.xlim([-600, 600])
+    plt.savefig('hist.jpg')
 
-    # select_deblur_coef(img)
-    # img = deblur(img, kernel, 0.02)
+    img = np.clip(img, 0, 255)
+    img = img.astype(np.uint8)
 
-    plt.figure(figsize=(20, 20)); plt.imshow(img[:, :, ::-1] if len(img.shape) == 3 else img); plt.show()
+    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+
+    cv2.imwrite('cleaned.jpg', np.concatenate([img0, img], axis=1))
+
+
+    # plt.figure(figsize=(20, 20)); plt.imshow(img[:, :, ::-1] if len(img.shape) == 3 else img); plt.show()
 
