@@ -2,7 +2,7 @@
 
 ## Install
 
-The repository comes with Pytorch `.pth` weights, so your machine should have Git Large File already installed before cloning, or else the `.pth` weights might be broken and the program will crash. Following this guide to install Git Large File.
+The repository comes with Pytorch `.pth` weights, so your machine should have Git Large File already installed before cloning, or else the `.pth` weights might be broken and the program will crash. Follow this guide to install Git Large File:
 ```
 curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
 sudo apt-get install git-lfs
@@ -20,7 +20,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-**Note**: This repository should be run on local machine only because during execution we prompt some interactive windows, which might not be supported by web-browser environments like Colab.
+**Note**: This repository should be run on local machine only because during execution we prompt some Tkinter windows, which might not be supported by web-browser environments like Colab.
 
 The script accepts single image as input.
 
