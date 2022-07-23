@@ -34,9 +34,9 @@ Arguments:
 
 The output includes a `.json` file and a demo image (for visualization purpose). In addition, we save intermediate result in the [cache](cache) folder for convenience.
 
-## Workflow
+## Pipeline
 
-As for the flow of execution, see picture below.
+As for the pipeline of execution, see the picture below.
 
 ![Flow](imgs/flow.jpg)
 
