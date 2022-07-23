@@ -22,7 +22,7 @@ pip install -r requirements.txt
 
 **Note**: This repository should be run on local machine only because during execution we prompt some interactive windows, which might not be supported by web-browser environments like Colab.
 
-The script accept single image as input.
+The script accepts single image as input.
 
 ```
 python3 run.py --input path/to/image --output path/to/folder
