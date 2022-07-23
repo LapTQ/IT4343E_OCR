@@ -48,7 +48,7 @@ For the details of techniques used in this project, please see [report](report.p
 
 ## Contributors
 
-This repository is following the course project in class IT4343E - Computer Vision. We would like to express our sincere gratitude to PhD. Dinh Viet Sang for guiding this course project.
+This repository follows the course project of class IT4343E - Computer Vision. We would like to express our sincere gratitude to PhD. Dinh Viet Sang for guiding this course project.
 
 Group members:
 * Hoang Nguyen Minh Nhat - 20194445
